@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}{{ super() }} - Lender Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Lender Dashboard</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Clients</h5>
+                <div class="display-4">{{ data.total_clients }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Assets Managed</h5>
+                <div class="display-4">${{ data.total_assets }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Avg. Risk Score</h5>
+                <div class="display-4">{{ data.avg_risk_score }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Client Overview</h5>
+                {# Placeholder for client list table #}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Client Name</th>
+                            <th>Risk Score</th>
+                            <th>Loan Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Loop through client data here #}
+                        <tr>
+                            <td>Client A</td>
+                            <td>720</td>
+                            <td>$15,000</td>
+                            <td>Approved</td>
+                            <td><a href="#">View Details</a></td>
+                        </tr>
+                         <tr>
+                            <td>Client B</td>
+                            <td>550</td>
+                            <td>$5,000</td>
+                            <td>Pending</td>
+                            <td><a href="#">View Details</a></td>
+                        </tr>
+                        {# Add more rows #}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Risk Distribution</h5>
+                {# Placeholder for Risk Distribution Chart #}
+                <canvas id="riskDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+     <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Application Status Overview</h5>
+                {# Placeholder for Application Status Chart #}
+                <canvas id="applicationStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Add more rows and columns for other charts and sections as per PDFs #}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Chart.js example for Risk Distribution (replace with actual data)
+    var riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
+    var riskDistributionChart = new Chart(riskCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                data: [70, 20, 10], // Example data
+                backgroundColor: ['#27ae60', '#f39c12', '#e74c3c'],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+
+    // Chart.js example for Application Status (replace with actual data)
+     var statusCtx = document.getElementById('applicationStatusChart').getContext('2d');
+    var applicationStatusChart = new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Approved', 'Pending', 'Rejected'],
+            datasets: [{
+                label: 'Number of Applications',
+                data: [120, 25, 5], // Example data
+                backgroundColor: ['#3498db', '#f1c40f', '#e74c3c'],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}{{ super() }} - Consumer Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Add custom CSS for the gauge and dashboard elements here */
+    .gauge-card {
+        background: linear-gradient(135deg, #f8fafc 60%, #e3e7ef 100%);
+        border-radius: 20px;
+        box-shadow: 0 2px 16px rgba(44, 62, 80, 0.07);
+        padding: 2.5rem 1.5rem 2rem 1.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+        position: relative;
+    }
+    .gauge-label {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #222;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    .gauge-info {
+        color: #6c757d;
+        cursor: pointer;
+    }
+    .gauge-svg {
+        display: block;
+        margin: 0 auto;
+    }
+    .gauge-score {
+        font-size: 3.2rem;
+        font-weight: 800;
+        color: #2563eb;
+        margin-top: -120px;
+        margin-bottom: 0.2rem;
+        letter-spacing: -2px;
+    }
+    .gauge-status {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .gauge-status-poor { color: #e74c3c; }
+    .gauge-status-fair { color: #f39c12; }
+    .gauge-status-good { color: #27ae60; }
+    .gauge-status-excellent { color: #2563eb; }
+    .gauge-labels {
+        display: flex;
+        justify-content: space-between;
+        width: 260px;
+        margin: 0 auto;
+        margin-top: -10px;
+    }
+    .gauge-labels span {
+        font-size: 1.1rem;
+        color: #888;
+        font-weight: 500;
+    }
+     .gauge-pointer {
+            transition: transform 1s cubic-bezier(.4,2,.6,1);
+            transform-origin: 130px 130px;
+        }
+    .dashboard-card-item {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+        padding: 1.2rem 1.5rem;
+        flex: 1 1 220px;
+        min-width: 220px;
+    }
+     .dashboard-card-item h6 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+        .dashboard-card-item .big {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #222;
+        }
+        .badge-factor {
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 0.3em 0.9em;
+            margin-right: 0.5em;
+        }
+        .badge-high { background: #eaf5ff; color: #2d6cdf; }
+        .badge-good { background: #e6f7e6; color: #2ecc71; }
+        .badge-stable { background: #f0f4fa; color: #888; }
+
+    /* Add styles for charts if needed */
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Consumer Dashboard</h2>
+
+<div class="row">
+    <div class="col-md-6">
+         <div class="gauge-card">
+                <div class="gauge-label">
+                    Alternative Credit Score
+                    <span class="gauge-info" data-bs-toggle="tooltip" title="A score based on your provided data. Higher is better."><i class="fas fa-info-circle"></i></span>
+                </div>
+                <svg class="gauge-svg" width="260" height="150">
+                    <defs>
+                        <linearGradient id="gaugeGradient2">
+                            <stop offset="0%" stop-color="#e74c3c"/>
+                            <stop offset="40%" stop-color="#f39c12"/>
+                            <stop offset="70%" stop-color="#27ae60"/>
+                            <stop offset="100%" stop-color="#2563eb"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M40,130 A90,90 0 0,1 220,130" fill="none" stroke="#e9ecef" stroke-width="22"/>
+                    <path id="gaugeArc2" d="" fill="none" stroke="url(#gaugeGradient2)" stroke-width="22" stroke-linecap="round"/>
+                     <g id="gaugePointerGroup">
+                        <line id="gaugePointer" x1="130" y1="130" x2="130" y2="50" stroke="#2563eb" stroke-width="6" class="gauge-pointer" />
+                        <circle cx="130" cy="130" r="10" fill="#fff" stroke="#2563eb" stroke-width="3"/>
+                    </g>
+                </svg>
+                <div class="gauge-score" id="gaugeScore">{{ data.credit_score }}</div>
+                <div class="gauge-status gauge-status-{{ data.credit_score_status | lower }}" id="gaugeStatus">{{ data.credit_score_status }}</div>
+                <div class="gauge-labels">
+                    <span>Poor</span>
+                    <span>Good</span>
+                </div>
+            </div>
+    </div>
+    <div class="col-md-6">
+         <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Earnings</h5>
+                <div class="display-4">${{ data.earnings | format_currency }}</div> {# Assuming format_currency filter is available #}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Credit Factors</h5>
+                {% for factor, status in data.credit_factors.items() %}
+                    <span class="badge badge-factor badge-{{ status | lower | replace(' ', '-') }}">{{ factor }}: {{ status }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Recent Activity</h5>
+                 <ul class="list-group list-group-flush">
+                    {% for activity in data.recent_activity %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ activity.description }} - {{ activity.date }}
+                            <span class="badge bg-secondary rounded-pill">{{ activity.amount }}</span>
+                        </li>
+                    {% endfor %}
+                 </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+         <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Prediction and Recommendations</h5>
+                <p>Based on your profile, the prediction is: <strong>{{ data.prediction }}</strong></p>
+                <p>Probability of High Risk: {{ data.high_risk_probability }}</p>
+                 <p>Probability of Low Risk: {{ data.low_risk_probability }}</p>
+
+                <h6>Recommendations:</h6>
+                <ul>
+                    {% for rec in data.recommendations %}
+                        <li>{{ rec }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Add more rows and columns for other charts and sections as per PDFs #}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tooltip initialization
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Gauge animation function (similar to before)
+    function polarToCartesian(cx, cy, r, angle) {
+        var rad = (angle - 90) * Math.PI / 180.0;
+        return {
+            x: cx + (r * Math.cos(rad)),
+            y: cy + (r * Math.sin(rad))
+        };
+    }
+    function describeArc(x, y, radius, startAngle, endAngle) {
+        var start = polarToCartesian(x, y, radius, endAngle);
+        var end = polarToCartesian(x, y, radius, startAngle);
+        var arcSweep = endAngle - startAngle <= 180 ? "0" : "1";
+        var d = [
+            "M", start.x, start.y,
+            "A", radius, radius, 0, arcSweep, 0, end.x, end.y
+        ].join(" ");
+        return d;
+    }
+    function animateGauge(score) {
+        const percent = Math.max(0, Math.min(1, (score - 300) / 550));
+        const endAngle = 180 * percent;
+        const arc = document.getElementById('gaugeArc2');
+        const pointer = document.getElementById('gaugePointer');
+        let current = 0;
+        const steps = 60; // More steps for smoother animation
+        const interval = 10; // Faster interval
+        function step() {
+            current++;
+            const curAngle = endAngle * (current / steps);
+            arc.setAttribute('d', describeArc(130, 130, 90, 0, curAngle));
+            const pointerAngle = curAngle - 90;
+             pointer.style.transform = `rotate(${pointerAngle}deg)`; // Use style.transform for animation
+
+            if (current < steps) setTimeout(step, interval);
+        }
+        step();
+    }
+
+    // Call animateGauge on page load with the actual credit score
+    document.addEventListener('DOMContentLoaded', function() {
+        const creditScore = parseInt(document.getElementById('gaugeScore').textContent);
+        if (!isNaN(creditScore)) {
+            animateGauge(creditScore);
+        }
+    });
+
+    // Add Chart.js code here for other charts based on data
+    // Example: Bar chart for spending categories
+    // var ctx = document.getElementById('spendingChart').getContext('2d');
+    // var spendingChart = new Chart(ctx, {
+    //     type: 'bar',
+    //     data: { ... },
+    //     options: { ... }
+    // });
+
+</script>
+{% endblock %} 
