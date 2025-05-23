@@ -1,16 +1,1 @@
-Age,Income,LoanAmount,LoanTerm,CreditScore,EmploymentStatus,Education,MaritalStatus,Risk
-35,50000,25000,36,720,Employed,Bachelor's,Married,0
-42,75000,50000,48,680,Employed,Master's,Married,0
-28,35000,15000,24,650,Employed,High School,Single,0
-45,90000,75000,60,750,Employed,PhD,Married,0
-31,45000,20000,36,620,Employed,Bachelor's,Single,1
-38,60000,40000,48,670,Self-employed,Master's,Married,0
-25,30000,10000,24,580,Employed,High School,Single,1
-50,120000,100000,60,780,Employed,PhD,Married,0
-33,55000,30000,36,640,Employed,Bachelor's,Married,0
-27,32000,12000,24,590,Employed,High School,Single,1
-40,80000,60000,48,710,Employed,Master's,Married,0
-29,38000,18000,36,630,Employed,Bachelor's,Single,1
-47,95000,80000,60,760,Employed,PhD,Married,0
-36,58000,35000,48,660,Employed,Bachelor's,Married,0
-24,28000,8000,24,570,Employed,High School,Single,1 
+ 
