@@ -1,9 +1,25 @@
 /* Custom styles based on AltFiScore AI theme */
 
+:root {
+    --primary-blue: #2d6cdf;
+    --dark-blue: #2559b8;
+    --light-grey: #f7f8fa;
+    --medium-grey: #e9ecef;
+    --dark-grey: #333;
+    --text-secondary: #6c757d;
+    --success-green: #27ae60;
+    --warning-orange: #f39c12;
+    --danger-red: #e74c3c;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f7f8fa; /* Light background */
-    color: #333;
+    background-color: var(--light-grey); /* Light background */
+    color: var(--dark-grey);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .navbar {
@@ -17,20 +33,21 @@ body {
 }
 
 .btn-primary {
-    background-color: #2d6cdf; /* Blue from theme */
-    border-color: #2d6cdf;
+    background-color: var(--primary-blue); /* Blue from theme */
+    border-color: var(--primary-blue);
     transition: background-color 0.3s ease;
 }
 
 .btn-primary:hover {
-    background-color: #2559b8;
-    border-color: #2559b8;
+    background-color: var(--dark-blue);
+    border-color: var(--dark-blue);
 }
 
 .card {
     border-radius: 12px;
     box-shadow: 0 2px 16px rgba(0,0,0,0.06);
     border: none;
+    margin-bottom: 1.5rem; /* Add margin between cards */
 }
 
 .card-header {
@@ -46,7 +63,7 @@ body {
 }
 
 .form-control:focus, .form-select:focus {
-    border-color: #2d6cdf;
+    border-color: var(--primary-blue);
     box-shadow: 0 0 0 0.25rem rgba(45, 109, 223, 0.25);
 }
 
@@ -63,4 +80,289 @@ body {
     border-radius: 8px;
 }
 
-/* Add more styles for dashboard elements based on PDFs */ 
+/* Dashboard Specific Styles */
+
+h2.mb-4 {
+    color: var(--dark-grey);
+    font-weight: 700;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Card Items (e.g., Earnings, Total Clients) */
+.dashboard-card-item {
+     background: #fff;
+     border-radius: 12px;
+     box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+     padding: 1.2rem 1.5rem;
+     flex: 1 1 220px; /* Allow flex items to grow and shrink, with a base width */
+     min-width: 220px;
+     display: flex;
+     flex-direction: column;
+     justify-content: space-between; /* Pushes title and big number apart */
+}
+
+.dashboard-card-item h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-card-item .big {
+    font-size: 2.2rem; /* Slightly larger */
+    font-weight: 700;
+    color: var(--dark-grey);
+    line-height: 1.2;
+}
+
+/* Gauge Card (Consumer Dashboard) */
+.gauge-card {
+    background: linear-gradient(135deg, #f8fafc 60%, #e3e7ef 100%);
+    border-radius: 20px;
+    box-shadow: 0 2px 16px rgba(44, 62, 80, 0.07);
+    padding: 2.5rem 1.5rem 2rem 1.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden; /* Ensures pointer stays within bounds */
+}
+
+.gauge-label {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--dark-grey);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.gauge-info {
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.gauge-svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.gauge-score {
+    font-size: 3.8rem; /* Larger score */
+    font-weight: 800;
+    color: var(--primary-blue);
+    margin-top: -130px; /* Adjust position */
+    margin-bottom: 0.5rem;
+    letter-spacing: -2px;
+    position: relative; /* Ensure it's above the SVG */
+    z-index: 2; /* Ensure it's above the SVG */
+}
+
+.gauge-status {
+    font-size: 1.6rem; /* Larger status text */
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative; /* Ensure it's above the SVG */
+    z-index: 2; /* Ensure it's above the SVG */
+}
+
+.gauge-status-poor { color: var(--danger-red); }
+.gauge-status-fair { color: var(--warning-orange); }
+.gauge-status-good { color: var(--success-green); }
+.gauge-status-very-good { color: var(--primary-blue); } /* Added for richer status */
+.gauge-status-excellent { color: var(--primary-blue); }
+
+.gauge-labels {
+    display: flex;
+    justify-content: space-between;
+    width: 260px;
+    margin: 0 auto;
+    margin-top: -10px; /* Adjust position */
+    position: relative; /* Ensure it's above the SVG */
+    z-index: 2; /* Ensure it's above the SVG */
+}
+
+.gauge-labels span {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.gauge-pointer {
+    transition: transform 1s cubic-bezier(.4,2,.6,1);
+    transform-origin: 130px 130px;
+}
+
+/* Credit Factors Badges */
+.badge-factor {
+    font-size: 0.9rem; /* Slightly smaller */
+    font-weight: 500;
+    border-radius: 8px; /* More rounded */
+    padding: 0.4em 1em; /* Adjusted padding */
+    margin-right: 0.6em; /* Adjusted margin */
+    margin-bottom: 0.6em; /* Add bottom margin for wrapping */
+    display: inline-block; /* Ensure margin and padding work */
+}
+
+.badge-high { background: #eaf5ff; color: #2d6cdf; } /* Using primary blue colors */
+.badge-very-good { background: #eaf5ff; color: #2d6cdf; } /* Using primary blue colors */
+.badge-good { background: #e6f7e6; color: var(--success-green); }
+.badge-medium { background: #fff3cd; color: #856404; } /* Added for medium income */
+.badge-fair { background: #fff3cd; color: var(--warning-orange); }
+.badge-stable { background: #f0f4fa; color: var(--text-secondary); } /* Using a neutral color */
+.badge-poor { background: #f8d7da; color: var(--danger-red); }
+.badge-unemployed { background: #f8d7da; color: var(--danger-red); }
+
+
+/* Recent Activity List */
+.list-group-item {
+    border-color: #eee; /* Lighter border */
+    padding: 1rem 1.25rem; /* Adjusted padding */
+}
+
+.list-group-item:last-child {
+    border-bottom-left-radius: 12px; /* Match card border radius */
+    border-bottom-right-radius: 12px; /* Match card border radius */
+}
+
+.list-group-item span.badge {
+    font-size: 0.85rem; /* Slightly smaller badge */
+    background-color: var(--medium-grey) !important; /* Neutral background */
+    color: var(--dark-grey); /* Dark text */
+}
+
+/* Prediction and Recommendations Section */
+.card-body h6 {
+    color: var(--dark-grey);
+    font-weight: 600;
+    margin-top: 1.5rem; /* Add space above recommendations */
+    margin-bottom: 0.8rem;
+}
+
+.card-body ul {
+    padding-left: 20px; /* Standard list padding */
+}
+
+.card-body ul li {
+    margin-bottom: 0.5rem; /* Space between list items */
+}
+
+/* Chart Containers */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    /* Add padding or margin if needed for chart legend */
+    padding-top: 1rem; /* Space above chart for title/labels */
+}
+
+/* Tables */
+.table {
+    margin-bottom: 0; /* Remove default table margin */
+}
+
+.table thead th {
+    border-bottom: 2px solid #dee2e6; /* Standard Bootstrap table header border */
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 1rem 1.25rem;
+}
+
+.table tbody td {
+     padding: 1rem 1.25rem;
+     vertical-align: middle; /* Center cell content vertically */
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #fbfcfd; /* Lighter stripe color */
+}
+
+.table a {
+    color: var(--primary-blue);
+    text-decoration: none;
+}
+
+.table a:hover {
+    text-decoration: underline;
+}
+
+/* Prediction Form Styles */
+.prediction-form-card .card-title {
+    margin-bottom: 1.5rem;
+    color: var(--dark-grey);
+    font-weight: 600;
+}
+
+.prediction-form-card label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.prediction-form-card .form-control::placeholder {
+    color: #bbb;
+}
+
+.loading-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9); /* More opaque background */
+    z-index: 10;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border-radius: 12px;
+}
+
+.loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    color: var(--primary-blue);
+}
+
+.loading-overlay p {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    color: var(--dark-grey);
+    font-weight: 500;
+}
+
+/* Utility Classes (if needed, e.g., for spacing) */
+.mt-4 { margin-top: 1.5rem !important; }
+.mb-4 { margin-bottom: 1.5rem !important; }
+.me-2 { margin-right: 0.5rem !important; }
+
+/* Responsive adjustments (basic example) */
+@media (max-width: 768px) {
+    .gauge-card {
+        padding: 2rem 1rem 1.5rem 1rem;
+    }
+
+    .gauge-score {
+        font-size: 3rem;
+        margin-top: -110px;
+    }
+
+    .gauge-status {
+        font-size: 1.3rem;
+    }
+
+    .dashboard-card-item {
+        padding: 1rem 1.2rem;
+        min-width: unset; /* Allow items to shrink more on small screens */
+    }
+
+    .dashboard-card-item .big {
+        font-size: 1.8rem;
+    }
+
+    .table thead th, .table tbody td {
+        padding: 0.8rem 1rem;
+    }
+}

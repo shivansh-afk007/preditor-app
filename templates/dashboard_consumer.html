@@ -96,102 +96,261 @@
         .badge-stable { background: #f0f4fa; color: #888; }
 
     /* Add styles for charts if needed */
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+     .prediction-form-card {
+        margin-bottom: 2rem;
+    }
+     .loading-overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 10;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        border-radius: 12px;
+    }
+    .loading-overlay .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        color: #2d6cdf;
+    }
+    .loading-overlay p {
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        color: #555;
+    }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <h2 class="mb-4">Consumer Dashboard</h2>
 
-<div class="row">
-    <div class="col-md-6">
-         <div class="gauge-card">
-                <div class="gauge-label">
-                    Alternative Credit Score
-                    <span class="gauge-info" data-bs-toggle="tooltip" title="A score based on your provided data. Higher is better."><i class="fas fa-info-circle"></i></span>
+{# --- Prediction Form --- #}
+<div class="card prediction-form-card">
+    <div class="card-body">
+        <h5 class="card-title">Get Your Credit Risk Prediction</h5>
+        <form id="predictionForm">
+             <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="age" class="form-label">Age</label>
+                    <input type="number" class="form-control" id="age" name="age" required min="18" max="100">
                 </div>
-                <svg class="gauge-svg" width="260" height="150">
-                    <defs>
-                        <linearGradient id="gaugeGradient2">
-                            <stop offset="0%" stop-color="#e74c3c"/>
-                            <stop offset="40%" stop-color="#f39c12"/>
-                            <stop offset="70%" stop-color="#27ae60"/>
-                            <stop offset="100%" stop-color="#2563eb"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M40,130 A90,90 0 0,1 220,130" fill="none" stroke="#e9ecef" stroke-width="22"/>
-                    <path id="gaugeArc2" d="" fill="none" stroke="url(#gaugeGradient2)" stroke-width="22" stroke-linecap="round"/>
-                     <g id="gaugePointerGroup">
-                        <line id="gaugePointer" x1="130" y1="130" x2="130" y2="50" stroke="#2563eb" stroke-width="6" class="gauge-pointer" />
-                        <circle cx="130" cy="130" r="10" fill="#fff" stroke="#2563eb" stroke-width="3"/>
-                    </g>
-                </svg>
-                <div class="gauge-score" id="gaugeScore">{{ data.credit_score }}</div>
-                <div class="gauge-status gauge-status-{{ data.credit_score_status | lower }}" id="gaugeStatus">{{ data.credit_score_status }}</div>
-                <div class="gauge-labels">
-                    <span>Poor</span>
-                    <span>Good</span>
+                <div class="col-md-6 mb-3">
+                    <label for="income" class="form-label">Annual Income</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="income" name="income" required min="0">
+                    </div>
                 </div>
             </div>
-    </div>
-    <div class="col-md-6">
-         <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">Earnings</h5>
-                <div class="display-4">${{ data.earnings | format_currency }}</div> {# Assuming format_currency filter is available #}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="loan_amount" class="form-label">Loan Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="loan_amount" name="loan_amount" required min="0">
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="loan_term" class="form-label">Loan Term</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="loan_term" name="loan_term" required min="1" max="360">
+                        <span class="input-group-text">months</span>
+                    </div>
+                </div>
             </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="credit_score" class="form-label">Credit Score</label>
+                    <input type="number" class="form-control" id="credit_score" name="credit_score" required min="300" max="850">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="employment_status" class="form-label">Employment Status</label>
+                    <select class="form-select" id="employment_status" name="employment_status" required>
+                        <option value="">Select...</option>
+                        <option value="Employed">Employed</option>
+                        <option value="Unemployed">Unemployed</option>
+                        <option value="Self-employed">Self-employed</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="education" class="form-label">Education</label>
+                    <select class="form-select" id="education" name="education" required>
+                        <option value="">Select...</option>
+                        <option value="High School">High School</option>
+                        <option value="Bachelor's">Bachelor's</option>
+                        <option value="Master's">Master's</option>
+                        <option value="PhD">PhD</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="marital_status" class="form-label">Marital Status</label>
+                    <select class="form-select" id="marital_status" name="marital_status" required>
+                        <option value="">Select...</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Divorced">Divorced</option>
+                    </select>
+                </div>
+            </div>
+            <div class="text-center">
+                 <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-calculator me-2"></i>Get Prediction
+                </button>
+            </div>
+        </form>
+         <div class="loading-overlay" id="predictionLoading">
+            <div class="spinner-border" role="status"></div>
+            <p>Calculating risk...</p>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Credit Factors</h5>
-                {% for factor, status in data.credit_factors.items() %}
-                    <span class="badge badge-factor badge-{{ status | lower | replace(' ', '-') }}">{{ factor }}: {{ status }}</span>
-                {% endfor %}
+{# --- Dashboard Content (Initially Hidden, shown after prediction) --- #}
+<div id="dashboardContent" style="display: none;">
+    <div class="row">
+        <div class="col-md-6">
+             <div class="gauge-card">
+                    <div class="gauge-label">
+                        Alternative Credit Score
+                        <span class="gauge-info" data-bs-toggle="tooltip" title="A score based on your provided data. Higher is better."><i class="fas fa-info-circle"></i></span>
+                    </div>
+                    <svg class="gauge-svg" width="260" height="150">
+                        <defs>
+                            <linearGradient id="gaugeGradient2">
+                                <stop offset="0%" stop-color="#e74c3c"/>
+                                <stop offset="40%" stop-color="#f39c12"/>
+                                <stop offset="70%" stop-color="#27ae60"/>
+                                <stop offset="100%" stop-color="#2563eb"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M40,130 A90,90 0 0,1 220,130" fill="none" stroke="#e9ecef" stroke-width="22"/>
+                        <path id="gaugeArc2" d="" fill="none" stroke="url(#gaugeGradient2)" stroke-width="22" stroke-linecap="round"/>
+                         <g id="gaugePointerGroup">
+                            <line id="gaugePointer" x1="130" y1="130" x2="130" y2="50" stroke="#2563eb" stroke-width="6" class="gauge-pointer" />
+                            <circle cx="130" cy="130" r="10" fill="#fff" stroke="#2563eb" stroke-width="3"/>
+                        </g>
+                    </svg>
+                    <div class="gauge-score" id="gaugeScore"></div> {# Data will be populated by JS #}
+                    <div class="gauge-status" id="gaugeStatus"></div> {# Data will be populated by JS #}
+                    <div class="gauge-labels">
+                        <span>Poor</span>
+                        <span>Good</span>
+                    </div>
+                </div>
+        </div>
+        <div class="col-md-6">
+             <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Earnings</h5>
+                    <div class="display-4" id="earningsVal"></div> {# Data will be populated by JS #}
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Recent Activity</h5>
-                 <ul class="list-group list-group-flush">
-                    {% for activity in data.recent_activity %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ activity.description }} - {{ activity.date }}
-                            <span class="badge bg-secondary rounded-pill">{{ activity.amount }}</span>
-                        </li>
-                    {% endfor %}
-                 </ul>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Credit Factors</h5>
+                     {# Credit factors will be populated by JS #}
+                    <div id="creditFactors"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Activity</h5>
+                     {# Recent activity will be populated by JS #}
+                     <ul class="list-group list-group-flush" id="recentActivityList">
+                     </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+             <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Prediction and Recommendations</h5>
+                    <p>Based on your profile, the prediction is: <strong id="predictionText"></strong></p>
+                    <p>Probability of High Risk: <span id="highRiskProb"></span></p>
+                    <p>Probability of Low Risk: <span id="lowRiskProb"></span></p>
+
+                    <h6>Recommendations:</h6>
+                    <ul id="recommendationsList">
+                        {# Recommendations will be populated by JS #}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- Additional Consumer Dashboard Sections (Placeholders) --- #}
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Spending Breakdown</h5>
+                    <div class="chart-container">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Credit Utilization</h5>
+                     <div class="chart-container">
+                        <canvas id="creditUtilizationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Loan Application Status</h5>
+                    {# Placeholder for Loan Application Status table or list #}
+                    <table class="table table-striped" id="loanApplicationsTable">
+                        <thead>
+                            <tr>
+                                <th>Loan Type</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Application Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                             {# Loan applications will be populated by JS #}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<div class="row mt-4">
-    <div class="col-md-12">
-         <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Prediction and Recommendations</h5>
-                <p>Based on your profile, the prediction is: <strong>{{ data.prediction }}</strong></p>
-                <p>Probability of High Risk: {{ data.high_risk_probability }}</p>
-                 <p>Probability of Low Risk: {{ data.low_risk_probability }}</p>
-
-                <h6>Recommendations:</h6>
-                <ul>
-                    {% for rec in data.recommendations %}
-                        <li>{{ rec }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# Add more rows and columns for other charts and sections as per PDFs #}
 
 {% endblock %}
 
@@ -203,7 +362,7 @@
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Gauge animation function (similar to before)
+    // Gauge animation function
     function polarToCartesian(cx, cy, r, angle) {
         var rad = (angle - 90) * Math.PI / 180.0;
         return {
@@ -227,36 +386,242 @@
         const arc = document.getElementById('gaugeArc2');
         const pointer = document.getElementById('gaugePointer');
         let current = 0;
-        const steps = 60; // More steps for smoother animation
-        const interval = 10; // Faster interval
+        const steps = 60; 
+        const interval = 10; 
         function step() {
             current++;
             const curAngle = endAngle * (current / steps);
             arc.setAttribute('d', describeArc(130, 130, 90, 0, curAngle));
             const pointerAngle = curAngle - 90;
-             pointer.style.transform = `rotate(${pointerAngle}deg)`; // Use style.transform for animation
+             pointer.style.transform = `rotate(${pointerAngle}deg)`;
 
             if (current < steps) setTimeout(step, interval);
         }
         step();
     }
 
-    // Call animateGauge on page load with the actual credit score
-    document.addEventListener('DOMContentLoaded', function() {
-        const creditScore = parseInt(document.getElementById('gaugeScore').textContent);
-        if (!isNaN(creditScore)) {
-            animateGauge(creditScore);
+     function getScoreStatus(score) {
+        if (score < 580) return {text: 'Poor', class: 'gauge-status-poor'};
+        if (score < 670) return {text: 'Fair', class: 'gauge-status-fair'};
+        if (score < 740) return {text: 'Good', class: 'gauge-status-good'};
+        if (score < 800) return {text: 'Very Good', class: 'gauge-status-excellent'};
+        return {text: 'Excellent', class: 'gauge-status-excellent'};
+    }
+
+    // Chart instances
+    let spendingChart, creditUtilizationChart;
+
+    // Function to update dashboard with prediction results
+    function updateDashboard(result, formData) {
+        const dashboardContent = document.getElementById('dashboardContent');
+        dashboardContent.style.display = 'block'; // Show dashboard content
+
+        // Update Gauge
+        const creditScore = parseInt(formData.get('credit_score'));
+        document.getElementById('gaugeScore').textContent = creditScore;
+        const status = getScoreStatus(creditScore);
+        const statusDiv = document.getElementById('gaugeStatus');
+        statusDiv.textContent = status.text;
+        statusDiv.className = 'gauge-status ' + status.class;
+        animateGauge(creditScore);
+
+        // Update Earnings
+        document.getElementById('earningsVal').textContent = `$${parseFloat(formData.get('income')).toLocaleString()}`;
+
+        // Update Credit Factors (using basic logic for now)
+        const creditFactorsDiv = document.getElementById('creditFactors');
+        creditFactorsDiv.innerHTML = ''; // Clear previous factors
+        const incomeStatus = parseFloat(formData.get('income')) > 50000 ? 'High' : 'Medium'; // Example logic
+        const scoreStatus = status.text;
+        const employmentStatus = formData.get('employment_status') === 'Employed' ? 'Stable' : formData.get('employment_status');
+
+        creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${incomeStatus.toLowerCase()}">Income: ${incomeStatus}</span>`;
+        creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${scoreStatus.toLowerCase().replace(' ', '-')}">Score: ${scoreStatus}</span>`;
+        creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${employmentStatus.toLowerCase().replace(' ', '-')}">Employment: ${employmentStatus}</span>`;
+
+        // Update Recent Activity (Mock Data for now)
+         const recentActivityList = document.getElementById('recentActivityList');
+         recentActivityList.innerHTML = ''; // Clear previous
+         const recentActivities = [
+            {'date': 'Today', 'description': 'Prediction made', 'amount': '--'},
+            // Add more dynamic or fetched recent activity here
+        ];
+        recentActivities.forEach(activity => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `${activity.description} - ${activity.date} <span class="badge bg-secondary rounded-pill">${activity.amount}</span>`;
+            recentActivityList.appendChild(li);
+        });
+
+        // Update Prediction and Recommendations
+        document.getElementById('predictionText').textContent = result.prediction;
+        document.getElementById('highRiskProb').textContent = result.high_risk_probability;
+        document.getElementById('lowRiskProb').textContent = result.low_risk_probability;
+
+        const recommendationsList = document.getElementById('recommendationsList');
+        recommendationsList.innerHTML = ''; // Clear previous
+        result.recommendations.forEach(rec => {
+            const li = document.createElement('li');
+            li.textContent = rec;
+            recommendationsList.appendChild(li);
+        });
+
+        // Update Charts (using mock data for now)
+        renderSpendingChart();
+        renderCreditUtilizationChart();
+
+        // Update Loan Applications Table (using mock data for now)
+         const loanApplicationsTableBody = document.querySelector('#loanApplicationsTable tbody');
+         loanApplicationsTableBody.innerHTML = ''; // Clear previous
+         const loanApplications = [
+             {'type': 'Personal Loan', 'amount': '$10,000', 'status': 'Pending Review', 'date': '2023-10-26', 'action': 'View Details'},
+             // Add more dynamic or fetched loan applications here
+         ];
+
+        loanApplications.forEach(app => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${app.type}</td>
+                <td>${app.amount}</td>
+                <td>${app.status}</td>
+                <td>${app.date}</td>
+                <td><a href="#">${app.action}</a></td>
+            `;
+            loanApplicationsTableBody.appendChild(tr);
+        });
+    }
+
+     // Function to render Spending Breakdown Chart
+    function renderSpendingChart() {
+        const ctx = document.getElementById('spendingChart');
+        if (spendingChart) spendingChart.destroy(); // Destroy previous instance if it exists
+        spendingChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Groceries', 'Utilities', 'Rent', 'Transport', 'Others'],
+                datasets: [{
+                    data: [300, 150, 1200, 100, 400], // Example data - replace with actual data from backend
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#a0a0a0'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false,
+                        text: 'Spending Breakdown'
+                    },
+                     legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    // Function to render Credit Utilization Chart
+     function renderCreditUtilizationChart() {
+        const ctx = document.getElementById('creditUtilizationChart');
+        if (creditUtilizationChart) creditUtilizationChart.destroy(); // Destroy previous instance
+        creditUtilizationChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Used Credit', 'Available Credit'],
+                datasets: [{
+                    data: [30, 70], // Example data (as percentage) - replace with actual data from backend
+                    backgroundColor: ['#e74a3b', '#1cc88a'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                 plugins: {
+                    title: {
+                        display: false,
+                        text: 'Credit Utilization'
+                    },
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) label += ': ';
+                                label += context.parsed + '%';
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Handle form submission
+    document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+
+        // Show loading overlay
+        document.getElementById('predictionLoading').style.display = 'flex';
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Update the dashboard with the prediction result and other data
+                // Note: For a real app, you might fetch all dashboard data after prediction
+                // For now, we are populating some elements with form data and prediction result
+                 updateDashboard(result, formData); // Use the new update function
+
+                 // Optionally hide the form after prediction is shown
+                 // form.style.display = 'none';
+
+            } else {
+                alert('Error: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            // Hide loading overlay
+            document.getElementById('predictionLoading').style.display = 'none';
         }
     });
 
-    // Add Chart.js code here for other charts based on data
-    // Example: Bar chart for spending categories
-    // var ctx = document.getElementById('spendingChart').getContext('2d');
-    // var spendingChart = new Chart(ctx, {
-    //     type: 'bar',
-    //     data: { ... },
-    //     options: { ... }
-    // });
+     // Initial rendering of charts and gauge if data is already available (e.g., on page load after login)
+     // This part assumes the Flask route passes initial data to the template
+     // If the data is only available after form submission, this part can be removed or adjusted
+     document.addEventListener('DOMContentLoaded', function() {
+        // Check if initial data is available and render elements/charts
+        // Example: if ('{{ data | tojson }}' !== '' && '{{ data | tojson }}' !== 'None') {
+        //     const initialData = {{ data | tojson }};
+        //     // Use initialData to populate elements and render charts
+        //     // updateDashboard(initialData, null); // You might need to adapt updateDashboard or create a separate function
+        // }
+         
+         // Initial gauge animation if a score is present on page load
+         const creditScoreElement = document.getElementById('gaugeScore');
+         if (creditScoreElement && !isNaN(parseInt(creditScoreElement.textContent))) {
+             animateGauge(parseInt(creditScoreElement.textContent));
+         }
+
+         // Initial chart rendering if data is available on page load
+        // if (typeof initialData !== 'undefined' && initialData.spending_data) {
+        //      renderSpendingChart(initialData.spending_data);
+        // }
+        // if (typeof initialData !== 'undefined' && initialData.credit_utilization_data) {
+        //      renderCreditUtilizationChart(initialData.credit_utilization_data);
+        // }
+
+         // Note: The current Flask route only passes mock data on initial load.
+         // The form submission handles dynamic updates.
+
+     });
 
 </script>
 {% endblock %} 

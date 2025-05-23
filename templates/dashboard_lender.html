@@ -2,6 +2,20 @@
 
 {% block title %}{{ super() }} - Lender Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Add any specific CSS for lender dashboard here if needed */
+    .client-table-container {
+        /* Add styling for the table container if needed */
+    }
+     .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h2 class="mb-4">Lender Dashboard</h2>
 
@@ -37,36 +51,30 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Client Overview</h5>
-                {# Placeholder for client list table #}
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Client Name</th>
-                            <th>Risk Score</th>
-                            <th>Loan Amount</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {# Loop through client data here #}
-                        <tr>
-                            <td>Client A</td>
-                            <td>720</td>
-                            <td>$15,000</td>
-                            <td>Approved</td>
-                            <td><a href="#">View Details</a></td>
-                        </tr>
-                         <tr>
-                            <td>Client B</td>
-                            <td>550</td>
-                            <td>$5,000</td>
-                            <td>Pending</td>
-                            <td><a href="#">View Details</a></td>
-                        </tr>
-                        {# Add more rows #}
-                    </tbody>
-                </table>
+                <div class="client-table-container">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Client Name</th>
+                                <th>Risk Score</th>
+                                <th>Loan Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in data.client_list %}
+                            <tr>
+                                <td>{{ client.name }}</td>
+                                <td>{{ client.risk_score }}</td>
+                                <td>{{ client.loan_amount }}</td>
+                                <td>{{ client.status }}</td>
+                                <td><a href="#">View Details</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -77,8 +85,9 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Risk Distribution</h5>
-                {# Placeholder for Risk Distribution Chart #}
-                <canvas id="riskDistributionChart"></canvas>
+                <div class="chart-container">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -86,57 +95,181 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Application Status Overview</h5>
-                {# Placeholder for Application Status Chart #}
-                <canvas id="applicationStatusChart"></canvas>
+                <div class="chart-container">
+                    <canvas id="applicationStatusChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-{# Add more rows and columns for other charts and sections as per PDFs #}
+{# --- Additional Lender Dashboard Sections --- #}
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Recent Applications</h5>
+                 <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Applicant Name</th>
+                            <th>Loan Amount</th>
+                            <th>Risk Score</th>
+                            <th>Submission Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                     <tbody>
+                         {% for app in data.recent_applications %}
+                        <tr>
+                            <td>{{ app.name }}</td>
+                            <td>{{ app.amount }}</td>
+                            <td>{{ app.score }}</td>
+                            <td>{{ app.date }}</td>
+                            <td>{{ app.status }}</td>
+                            <td><a href="#">View Application</a></td>
+                        </tr>
+                        {% endfor %}
+                     </tbody>
+                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+     <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Loan Performance</h5>
+                 <div class="chart-container">
+                    <canvas id="loanPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+     <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Geographic Distribution</h5>
+                  <div class="chart-container">
+                    <canvas id="geographicDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
+{# Script tags to embed JSON data #}
+<script type="application/json" id="riskDistributionData">{{ data.risk_distribution_data | tojson | safe }}</script>
+<script type="application/json" id="applicationStatusData">{{ data.application_status_data | tojson | safe }}</script>
+<script type="application/json" id="loanPerformanceData">{{ data.loan_performance_data | tojson | safe }}</script>
+<script type="application/json" id="geographicDistributionData">{{ data.geographic_distribution_data | tojson | safe }}</script>
+
 {% block extra_js %}
 <script>
-    // Chart.js example for Risk Distribution (replace with actual data)
-    var riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
-    var riskDistributionChart = new Chart(riskCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
-            datasets: [{
-                data: [70, 20, 10], // Example data
-                backgroundColor: ['#27ae60', '#f39c12', '#e74c3c'],
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-        }
-    });
+    // Read data from the script tags and parse JSON
+    const riskDistributionData = JSON.parse(document.getElementById('riskDistributionData').textContent);
+    const applicationStatusData = JSON.parse(document.getElementById('applicationStatusData').textContent);
+    const loanPerformanceData = JSON.parse(document.getElementById('loanPerformanceData').textContent);
+    const geographicDistributionData = JSON.parse(document.getElementById('geographicDistributionData').textContent);
 
-    // Chart.js example for Application Status (replace with actual data)
-     var statusCtx = document.getElementById('applicationStatusChart').getContext('2d');
-    var applicationStatusChart = new Chart(statusCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Approved', 'Pending', 'Rejected'],
-            datasets: [{
-                label: 'Number of Applications',
-                data: [120, 25, 5], // Example data
-                backgroundColor: ['#3498db', '#f1c40f', '#e74c3c'],
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
+    // Chart.js example for Risk Distribution
+    var riskCtx = document.getElementById('riskDistributionChart');
+    if (riskCtx) {
+         var riskDistributionChart = new Chart(riskCtx, {
+            type: 'pie',
+            data: riskDistributionData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                 plugins: {
+                    title: {
+                        display: false,
+                        text: 'Risk Distribution'
+                    },
+                     legend: { position: 'bottom' }
                 }
             }
-        }
-    });
+        });
+    }
+
+    // Chart.js example for Application Status
+     var statusCtx = document.getElementById('applicationStatusChart');
+      if (statusCtx) {
+        var applicationStatusChart = new Chart(statusCtx, {
+            type: 'bar',
+            data: applicationStatusData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                 plugins: {
+                    title: {
+                        display: false,
+                        text: 'Application Status Overview'
+                    },
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Chart.js example for Loan Performance
+     var loanPerformanceCtx = document.getElementById('loanPerformanceChart');
+      if (loanPerformanceCtx) {
+        new Chart(loanPerformanceCtx, {
+            type: 'line',
+            data: loanPerformanceData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                 plugins: {
+                    title: {
+                        display: false,
+                        text: 'Loan Performance'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+     // Chart.js example for Geographic Distribution
+     var geoCtx = document.getElementById('geographicDistributionChart');
+      if (geoCtx) {
+        new Chart(geoCtx, {
+            type: 'bar',
+            data: geographicDistributionData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                 plugins: {
+                    title: {
+                        display: false,
+                        text: 'Geographic Distribution'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
 </script>
 {% endblock %} 

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}{{ super() }} - Welcome{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Landing Page Specific Styles */
+    .hero-section {
+        background: linear-gradient(rgba(45, 109, 223, 0.8), rgba(45, 109, 223, 0.8)), url('{{ url_for(\'static\', filename=\'images/AltFiScore lanidng page.png\') }}') no-repeat center center;
+        background-size: cover;
+        color: #fff;
+        padding: 8rem 0;
+        margin-bottom: 3rem;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden; /* Ensures background image is clipped */
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(45, 109, 223, 0.6); /* Darker overlay */
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-content h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #fff;
+    }
+
+    .hero-content .lead {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .section-title {
+        text-align: center;
+        margin-bottom: 3rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--dark-grey);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        color: var(--primary-blue);
+        margin-bottom: 1rem;
+    }
+
+    .feature-box {
+        text-align: center;
+        padding: 2rem;
+        border-radius: 10px;
+        background-color: #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+        height: 100%; /* Ensure equal height cards in a row */
+    }
+
+    .feature-box h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--dark-grey);
+    }
+
+    .about-section img {
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+     /* Ensure footer is at the bottom (requires more comprehensive layout) */
+     /* This might need adjustments in base.html as well */
+     body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+     }
+     .container.mt-4 {
+        flex-grow: 1;
+     }
+      footer {
+        background-color: #f8f9fa;
+        padding: 2rem 0;
+        margin-top: 3rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #555;
+     }
+      footer p {
+        margin-bottom: 0;
+      }
+
+    /* How it Works Section */
+    .how-it-works-step {
+        text-align: center;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .how-it-works-step .step-number {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-blue);
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    .how-it-works-step h4 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+        color: var(--dark-grey);
+    }
+
+    /* Call to Action Section */
+    .cta-section {
+        background-color: var(--primary-blue);
+        color: #fff;
+        padding: 4rem 0;
+        text-align: center;
+        margin-top: 3rem;
+        border-radius: 15px;
+    }
+    .cta-section h2 {
+        color: #fff;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+     .cta-section p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.9);
+     }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-section">
+    <div class="container hero-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h1>Unlock Your Financial Potential</h1>
+                <p class="lead">Revolutionizing credit risk assessment with alternative data for a fairer financial future.</p>
+                <p>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-2">Get Started</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">Login</a> {# Changed to btn-outline-light for contrast #}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <h2 class="section-title">Features</h2>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="feature-box">
+                <i class="fas fa-chart-line feature-icon"></i> {# Example icon #}
+                <h3>Accurate Risk Assessment</h3>
+                <p>Utilize advanced AI and alternative data sources for precise credit risk evaluation.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-box">
+                 <i class="fas fa-users feature-icon"></i> {# Example icon #}
+                <h3>Tailored for You</h3>
+                <p>Customized dashboards and insights for both consumers and lenders.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-box">
+                 <i class="fas fa-lock feature-icon"></i> {# Example icon #}
+                <h3>Secure & Private</h3>
+                <p>Your data is protected with industry-leading security measures.</p>
+            </div>
+        </div>
+    </div>
+
+    {# Add more feature rows if needed #}
+
+    <div class="row mt-5 about-section">
+        <div class="col-md-6">
+            <h2 class="section-title text-start">About AltFiScore AI</h2> {# Align title to start #}
+            <p>AltFiScore AI is at the forefront of financial innovation, providing a more inclusive and accurate way to assess credit risk. Our platform leverages the power of artificial intelligence and diverse data sets to offer insights that traditional credit scoring might miss.</p>
+            <p>Whether you are a consumer looking to understand and improve your financial standing or a lender seeking to make more informed decisions, AltFiScore AI provides the tools and insights you need.</p>
+            {# Add more about text #}
+        </div>
+        <div class="col-md-6">
+             {# Placeholder for a relevant image in the about section #}
+            <img src="https://via.placeholder.com/600x400" class="img-fluid" alt="About Us Image">
+        </div>
+    </div>
+
+    {# --- How it Works Section --- #}
+    <div class="row mt-5">
+        <h2 class="section-title">How It Works</h2>
+        <div class="col-md-4">
+            <div class="how-it-works-step">
+                <span class="step-number">1</span>
+                <h4>Sign Up & Create Profile</h4>
+                <p>Easily register as a consumer or lender and set up your account.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="how-it-works-step">
+                <span class="step-number">2</span>
+                <h4>Provide Data</h4>
+                <p>Securely provide relevant financial and alternative data points.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="how-it-works-step">
+                <span class="step-number">3</span>
+                <h4>Get Insights / Assess Risk</h4>
+                <p>Receive your alternative credit score and recommendations, or assess applicant risk with detailed reports.</p>
+            </div>
+        </div>
+    </div>
+
+    {# --- Call to Action Section --- #}
+    <div class="cta-section mt-5">
+        <div class="container">
+             <h2>Ready to Get Started?</h2>
+             <p>Join AltFiScore AI today and experience the future of credit assessment.</p>
+             <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg">Sign Up Now</a>
+        </div>
+    </div>
+
+    {# Placeholder for other sections like Testimonials, FAQ, etc. #}
+
+</div>
+
+{% endblock %}
+
+{# Basic Footer #}
+<footer>
+    <div class="container">
+        <p>&copy; 2023 AltFiScore AI. All rights reserved.</p>
+    </div>
+</footer> 
+{% endblock %} 

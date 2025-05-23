@@ -60,7 +60,7 @@ def index():
             return redirect(url_for('consumer_dashboard'))
         elif current_user.role == 'lender':
             return redirect(url_for('lender_dashboard'))
-    return redirect(url_for('login'))
+    return render_template('landing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -117,21 +117,55 @@ def logout():
 def consumer_dashboard():
     if current_user.role != 'consumer':
         return "Unauthorized", 403 # Or redirect to their correct dashboard
+
     # --- Consumer Dashboard Data Mockup ---
     dashboard_data = {
-        'credit_score': 752, # Example data
-        'earnings': 6320, # Example data
+        'credit_score': 752,
+        'credit_score_status': 'Good', # Added status for gauge
+        'earnings': 6320,
         'credit_factors': {
             'Income': 'High',
             'Cash Flow': 'Very Good',
             'Employment': 'Stable'
         },
         'recent_activity': [
-            {'date': 'Apr 22', 'description': 'Direct deposit', 'amount': '+3160.00'},
-            {'date': 'Apr 17', 'description': 'Grover Energy', 'amount': '-150.00'}
+            {'date': 'Apr 22', 'description': 'Direct deposit', 'amount': '+$3,160.00'},
+            {'date': 'Apr 17', 'description': 'Grover Energy', 'amount': '-$150.00'},
+            {'date': 'Apr 15', 'description': 'Credit Card Payment', 'amount': '-$500.00'},
+             {'date': 'Apr 10', 'description': 'Restaurant', 'amount': '-$45.50'},
         ],
-        # Add more data for charts, etc.
+        'prediction': 'Low Risk', # Example prediction
+        'high_risk_probability': '15%', # Example probability
+        'low_risk_probability': '85%', # Example probability
+        'recommendations': [
+            'Keep up the good credit habits!',
+            'Consider increasing your credit limit to improve utilization.',
+            'Explore options for reducing outstanding debt.'
+        ],
+        'spending_data': {
+            'labels': ['Groceries', 'Utilities', 'Rent', 'Transport', 'Others'],
+            'data': [300, 150, 1200, 100, 400],
+            'backgroundColor': ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#a0a0a0']
+        },
+        'credit_utilization_data': {
+            'labels': ['Used Credit', 'Available Credit'],
+            'data': [30, 70],
+            'backgroundColor': ['#e74a3b', '#1cc88a']
+        },
+        'loan_applications': [
+            {'type': 'Personal Loan', 'amount': '$10,000', 'status': 'Pending Review', 'date': '2023-10-26'},
+            {'type': 'Auto Loan', 'amount': '$25,000', 'status': 'Approved', 'date': '2023-10-01'},
+        ]
     }
+
+     # Determine credit score status for the gauge
+    score = dashboard_data['credit_score']
+    if score < 580: dashboard_data['credit_score_status'] = 'Poor'
+    elif score < 670: dashboard_data['credit_score_status'] = 'Fair'
+    elif score < 740: dashboard_data['credit_score_status'] = 'Good'
+    elif score < 800: dashboard_data['credit_score_status'] = 'Very Good'
+    else: dashboard_data['credit_score_status'] = 'Excellent'
+
     return render_template('dashboard_consumer.html', data=dashboard_data)
 
 @app.route('/dashboard/lender')
@@ -139,19 +173,53 @@ def consumer_dashboard():
 def lender_dashboard():
     if current_user.role != 'lender':
         return "Unauthorized", 403 # Or redirect to their correct dashboard
+
     # --- Lender Dashboard Data Mockup ---
     dashboard_data = {
         'total_clients': 150,
-        'total_assets': '5.2M',
+        'total_assets': '5.2M', # Example data
         'avg_risk_score': 680,
-        # Add more data for client list, charts, etc.
+        'client_list': [
+            {'name': 'Client A', 'risk_score': 720, 'loan_amount': '$15,000', 'status': 'Approved'},
+            {'name': 'Client B', 'risk_score': 550, 'loan_amount': '$5,000', 'status': 'Pending'},
+             {'name': 'Client C', 'risk_score': 630, 'loan_amount': '$25,000', 'status': 'Approved'},
+             {'name': 'Client D', 'risk_score': 780, 'loan_amount': '$50,000', 'status': 'Approved'},
+             {'name': 'Client E', 'risk_score': 490, 'loan_amount': '$2,000', 'status': 'Rejected'},
+        ],
+        'risk_distribution_data': {
+            'labels': ['Low Risk', 'Medium Risk', 'High Risk'],
+            'data': [70, 20, 10],
+            'backgroundColor': ['#27ae60', '#f39c12', '#e74c3c'],
+        },
+         'application_status_data': {
+            'labels': ['Approved', 'Pending', 'Rejected'],
+            'data': [120, 25, 5],
+            'backgroundColor': ['#3498db', '#f1c40f', '#e74c3c'],
+        },
+        'recent_applications': [
+             {'name': 'Applicant C', 'amount': '$20,000', 'score': 680, 'date': '2023-10-25', 'status': 'Under Review'},
+              {'name': 'Applicant D', 'amount': '$5,000', 'score': 750, 'date': '2023-10-24', 'status': 'Approved'},
+        ],
+         'loan_performance_data': {
+            'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            'data': [65, 59, 80, 81, 56, 55],
+            'borderColor': '#2d6cdf',
+            'fill': False
+        },
+         'geographic_distribution_data': {
+            'labels': ['Region A', 'Region B', 'Region C'],
+            'data': [50, 30, 70],
+            'backgroundColor': ['#1cc88a', '#f6c23e', '#36b9cc'],
+        }
+
     }
     return render_template('dashboard_lender.html', data=dashboard_data)
 
 # --- Credit Risk Prediction (Integrate existing logic, modify for web) ---
 # Load the model (assuming 'models/credit_risk_model.joblib' exists)
 try:
-    model = joblib.load('models/credit_risk_model.joblib')
+    from credit_risk_model import CreditRiskModel
+    model = CreditRiskModel.load_model('models/credit_risk_model.joblib')
 except FileNotFoundError:
     model = None # Handle case where model is not trained
 
@@ -165,7 +233,7 @@ def predict():
          return jsonify({'error': 'Model not trained. Please run the training script first.'}), 500
 
     try:
-        # Get data from the form (assuming similar form fields as before)
+        # Get data from the form
         data = {
             'Age': float(request.form.get('age')),
             'Income': float(request.form.get('income')),
@@ -178,26 +246,41 @@ def predict():
         }
 
         # Ensure all required fields are present and valid
-        # (More robust validation needed for production)
         if any(v is None for v in data.values()):
              return jsonify({'error': 'Missing form data'}), 400
 
-        # Convert to DataFrame (handle categorical features - requires model preprocessing logic)
-        # This part needs to match exactly how your model expects the input DataFrame
-        # For a simple demo, assume model handles one-hot encoding internally or input is pre-encoded
-        # A more realistic approach involves saving/loading the scaler and encoder used during training
-        # For now, let's assume raw input works for the loaded model
+        # Convert to DataFrame
         input_data = pd.DataFrame([data])
 
         # Make prediction
-        prediction = model.predict(input_data)
-        probability = model.predict_proba(input_data)
+        predictions, probabilities = model.predict(input_data)
+        
+        # Determine prediction result and recommendations
+        predicted_risk = 'High Risk' if predictions[0] == 1 else 'Low Risk'
+        high_risk_prob = f"{probabilities[0][1]:.2%}"
+        low_risk_prob = f"{probabilities[0][0]:.2%}"
 
-        # Prepare response
+        recommendations = []
+        # Generate recommendations based on input data
+        if predictions[0] == 1:  # High risk
+            if data['CreditScore'] < 600:
+                recommendations.append('Consider improving your credit score by paying bills on time and reducing debt.')
+            if data['Income'] < 30000:
+                recommendations.append('Look for ways to increase your income or reduce the loan amount.')
+            if data['LoanAmount'] > data['Income'] * 0.5:
+                recommendations.append('Consider requesting a smaller loan amount relative to your income.')
+        else:  # Low risk
+            recommendations.append('Your credit profile looks good! Maintain your current financial habits.')
+            if data['CreditScore'] < 700:
+                recommendations.append('You could potentially get better rates by improving your credit score further.')
+            if data['LoanAmount'] < data['Income'] * 0.2:
+                recommendations.append('You may be eligible for larger loan amounts if needed.')
+
         result = {
-            'prediction': 'High Risk' if prediction[0] == 1 else 'Low Risk',
-            'high_risk_probability': f"{probability[0][1]:.2%}",
-            'low_risk_probability': f"{probability[0][0]:.2%}"
+            'prediction': predicted_risk,
+            'high_risk_probability': high_risk_prob,
+            'low_risk_probability': low_risk_prob,
+            'recommendations': recommendations
         }
 
         return jsonify(result)
