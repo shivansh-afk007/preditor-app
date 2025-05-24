@@ -33,12 +33,12 @@
         margin: 0 auto;
     }
     .gauge-score {
-        font-size: 3.6rem;
+        font-size: 1.8rem;
         font-weight: 800;
         color: #2563eb;
-        margin-top: -100px;
+        margin-top: 10px;
         margin-bottom: 0.2rem;
-        letter-spacing: -2px;
+        letter-spacing: -1px;
     }
     .gauge-status {
         font-size: 1.5rem;
@@ -137,6 +137,7 @@
 <h2 class="mb-4">Consumer Dashboard</h2>
 
 {# --- Prediction Form --- #}
+{% if not is_lender_view %}
 <div class="card prediction-form-card">
     <div class="card-body">
         <h5 class="card-title">Get Your Credit Risk Prediction</h5>
@@ -218,6 +219,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 {# --- Dashboard Content (Initially Hidden, shown after prediction) --- #}
 <div id="dashboardContent" style="display: none;">
@@ -473,20 +475,21 @@
         ].join(" ");
         return d;
     }
-    function animateGauge(score) {
-        const percent = Math.max(0, Math.min(1, (score - 300) / 550));
-        const endAngle = 180 * percent;
+    // Animate Gauge based on a value (e.g., probability 0-1, mapped to angle 0-180)
+    function animateGauge(value) {
+        // Assuming value is between 0 (Poor) and 1 (Good)
+        const angle = value * 180; // Map 0-1 to 0-180 degrees
         const arc = document.getElementById('gaugeArc2');
         const pointer = document.getElementById('gaugePointer');
         let current = 0;
-        const steps = 60; 
-        const interval = 10; 
+        const steps = 60;
+        const interval = 10;
         function step() {
             current++;
-            const curAngle = endAngle * (current / steps);
+            const curAngle = angle * (current / steps);
             arc.setAttribute('d', describeArc(130, 130, 90, 0, curAngle));
             const pointerAngle = curAngle - 90;
-             pointer.style.transform = `rotate(${pointerAngle}deg)`;
+            pointer.style.transform = `rotate(${pointerAngle}deg)`;
 
             if (current < steps) setTimeout(step, interval);
         }
@@ -502,43 +505,86 @@
     }
 
     // Chart instances
-    let spendingChart, creditUtilizationChart;
+    let spendingChart, creditUtilizationChart, scoreHistoryChart;
 
-    // Function to update dashboard with prediction results
-    function updateDashboard(result, formData) {
-        const dashboardContent = document.getElementById('dashboardContent');
-        dashboardContent.style.display = 'block'; // Show dashboard content
+    // Function to display dashboard data (used for both initial load and after prediction)
+    function displayDashboardData(dashboardData, formData = null) {
+        // Update Dashboard elements (do NOT make dashboardContent visible here)
 
-        // Update Gauge
-        const creditScore = parseInt(formData.get('credit_score'));
-        document.getElementById('gaugeScore').textContent = creditScore;
-        const status = getScoreStatus(creditScore);
-        const statusDiv = document.getElementById('gaugeStatus');
-        statusDiv.textContent = status.text;
-        statusDiv.className = 'gauge-status ' + status.class;
-        animateGauge(creditScore);
+        // Update Gauge using Prediction Result and Probability
+        if (dashboardData.low_risk_probability_numeric !== undefined) {
+            document.getElementById('gaugeScore').textContent = dashboardData.low_risk_probability; // Display formatted probability
+            const statusDiv = document.getElementById('gaugeStatus');
+            statusDiv.textContent = dashboardData.prediction;
+            // Update status class based on prediction
+            if (dashboardData.prediction === 'Low Risk') {
+                statusDiv.className = 'gauge-status gauge-status-good';
+            } else {
+                statusDiv.className = 'gauge-status gauge-status-poor';
+            }
+            // Animate Gauge based on Low Risk Probability (0-1 range)
+            animateGauge(dashboardData.low_risk_probability_numeric);
+        } else if (dashboardData.credit_score !== undefined) {
+             // Fallback to mock credit score if no prediction available
+            document.getElementById('gaugeScore').textContent = dashboardData.credit_score;
+            const status = getScoreStatus(dashboardData.credit_score);
+            const statusDiv = document.getElementById('gaugeStatus');
+            statusDiv.textContent = status.text;
+            statusDiv.className = 'gauge-status ' + status.class;
+            // Animate Gauge based on credit score (300-850 range)
+             animateGauge((dashboardData.credit_score - 300) / 550); // Map 300-850 to 0-1
+        } else {
+             // Hide gauge if no data is available
+             document.querySelector('.gauge-card').style.display = 'none';
+        }
 
         // Update Earnings
-        document.getElementById('earningsVal').textContent = `$${parseFloat(formData.get('income')).toLocaleString()}`;
+        // Use income from formData if available (after form submission), otherwise from initial dashboardData
+        const income = formData ? parseFloat(formData.get('income')) : dashboardData.earnings;
+        if (income !== undefined) {
+             document.getElementById('earningsVal').textContent = `$${income.toLocaleString()}`;
+        } else {
+             document.getElementById('earningsVal').textContent = 'N/A';
+        }
 
-        // Update Credit Factors (using basic logic for now)
+        // Update Credit Factors
         const creditFactorsDiv = document.getElementById('creditFactors');
         creditFactorsDiv.innerHTML = ''; // Clear previous factors
-        const incomeStatus = parseFloat(formData.get('income')) > 50000 ? 'High' : 'Medium'; // Example logic
-        const scoreStatus = status.text;
-        const employmentStatus = formData.get('employment_status') === 'Employed' ? 'Stable' : formData.get('employment_status');
 
-        creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${incomeStatus.toLowerCase()}">Income: ${incomeStatus}</span>`;
-        creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${scoreStatus.toLowerCase().replace(' ', '-')}">Score: ${scoreStatus}</span>`;
-        creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${employmentStatus.toLowerCase().replace(' ', '-')}">Employment: ${employmentStatus}</span>`;
+        // Use data from formData if available, otherwise from initial dashboardData
+        const currentIncome = formData ? parseFloat(formData.get('income')) : dashboardData.earnings;
+        const incomeStatus = currentIncome && currentIncome > 50000 ? 'High' : 'Medium'; // Example logic
+        if (currentIncome !== undefined) {
+            creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${incomeStatus.toLowerCase()}">Income: ${incomeStatus}</span>`;
+        }
 
-        // Update Recent Activity (Mock Data for now)
+        const currentPrediction = dashboardData.prediction;
+        if (currentPrediction && currentPrediction !== 'No prediction yet.') {
+            const predictionBadgeClass = currentPrediction === 'Low Risk' ? 'badge-good' : 'badge-high';
+            creditFactorsDiv.innerHTML += `<span class="badge badge-factor ${predictionBadgeClass}">Risk: ${currentPrediction}</span>`;
+        } else if (dashboardData.credit_score_status) {
+             // Fallback to credit score status if no prediction is available
+             const scoreStatusClass = dashboardData.credit_score_status.toLowerCase().replace(' ', '-');
+             creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${scoreStatusClass}">Score Status: ${dashboardData.credit_score_status}</span>`;
+        }
+
+        // Use data from formData if available, otherwise from initial dashboardData
+        const currentEmploymentStatus = formData ? formData.get('employment_status') : (dashboardData.credit_factors ? dashboardData.credit_factors.Employment : undefined);
+         if (currentEmploymentStatus) {
+             const employmentStatusClass = currentEmploymentStatus === 'Employed' ? 'stable' : currentEmploymentStatus.toLowerCase().replace(' ', '-');
+             creditFactorsDiv.innerHTML += `<span class="badge badge-factor badge-${employmentStatusClass}">Employment: ${currentEmploymentStatus}</span>`;
+         }
+
+        // Update Recent Activity
          const recentActivityList = document.getElementById('recentActivityList');
          recentActivityList.innerHTML = ''; // Clear previous
-         const recentActivities = [
-            {'date': 'Today', 'description': 'Prediction made', 'amount': '--'},
-            // Add more dynamic or fetched recent activity here
-        ];
+         const recentActivities = dashboardData.recent_activity || [];
+
+         // Add a recent activity entry for the prediction if it just happened
+         if (formData && dashboardData.prediction && dashboardData.prediction !== 'No prediction yet.') {
+              recentActivities.unshift({'date': 'Today', 'description': 'Prediction made', 'amount': '--'});
+         }
+
         recentActivities.forEach(activity => {
             const li = document.createElement('li');
             li.className = 'list-group-item d-flex justify-content-between align-items-center';
@@ -547,29 +593,31 @@
         });
 
         // Update Prediction and Recommendations
-        document.getElementById('predictionText').textContent = result.prediction;
-        document.getElementById('highRiskProb').textContent = result.high_risk_probability;
-        document.getElementById('lowRiskProb').textContent = result.low_risk_probability;
+        document.getElementById('predictionText').textContent = dashboardData.prediction;
+        document.getElementById('highRiskProb').textContent = dashboardData.high_risk_probability;
+        document.getElementById('lowRiskProb').textContent = dashboardData.low_risk_probability;
 
         const recommendationsList = document.getElementById('recommendationsList');
         recommendationsList.innerHTML = ''; // Clear previous
-        result.recommendations.forEach(rec => {
+        const recommendations = dashboardData.recommendations || [];
+        recommendations.forEach(rec => {
             const li = document.createElement('li');
             li.textContent = rec;
             recommendationsList.appendChild(li);
         });
 
-        // Update Charts (using mock data for now)
-        renderSpendingChart();
-        renderCreditUtilizationChart();
+        // Update Charts
+        if (dashboardData.spending_data) {
+             renderSpendingChart(dashboardData.spending_data);
+        }
+        if (dashboardData.credit_utilization_data) {
+             renderCreditUtilizationChart(dashboardData.credit_utilization_data);
+        }
 
-        // Update Loan Applications Table (using mock data for now)
+        // Update Loan Applications Table (using data from backend if available)
          const loanApplicationsTableBody = document.querySelector('#loanApplicationsTable tbody');
          loanApplicationsTableBody.innerHTML = ''; // Clear previous
-         const loanApplications = [
-             {'type': 'Personal Loan', 'amount': '$10,000', 'status': 'Pending Review', 'date': '2023-10-26', 'action': 'View Details'},
-             // Add more dynamic or fetched loan applications here
-         ];
+         const loanApplications = dashboardData.loan_applications || [];
 
         loanApplications.forEach(app => {
             const tr = document.createElement('tr');
@@ -578,23 +626,23 @@
                 <td>${app.amount}</td>
                 <td>${app.status}</td>
                 <td>${app.date}</td>
-                <td><a href="#">${app.action}</a></td>
+                <td><a href="#">${app.action || 'View Details'}</a></td>
             `;
             loanApplicationsTableBody.appendChild(tr);
         });
     }
 
      // Function to render Spending Breakdown Chart
-    function renderSpendingChart() {
+    function renderSpendingChart(data) {
         const ctx = document.getElementById('spendingChart');
         if (spendingChart) spendingChart.destroy(); // Destroy previous instance if it exists
         spendingChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: ['Groceries', 'Utilities', 'Rent', 'Transport', 'Others'],
+                labels: data.labels,
                 datasets: [{
-                    data: [300, 150, 1200, 100, 400], // Example data - replace with actual data from backend
-                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#a0a0a0'],
+                    data: data.data,
+                    backgroundColor: data.backgroundColor,
                 }]
             },
             options: {
@@ -612,16 +660,16 @@
     }
 
     // Function to render Credit Utilization Chart
-     function renderCreditUtilizationChart() {
+     function renderCreditUtilizationChart(data) {
         const ctx = document.getElementById('creditUtilizationChart');
         if (creditUtilizationChart) creditUtilizationChart.destroy(); // Destroy previous instance
         creditUtilizationChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Used Credit', 'Available Credit'],
+                labels: data.labels,
                 datasets: [{
-                    data: [30, 70], // Example data (as percentage) - replace with actual data from backend
-                    backgroundColor: ['#e74a3b', '#1cc88a'],
+                    data: data.data,
+                    backgroundColor: data.backgroundColor,
                 }]
             },
             options: {
@@ -649,6 +697,7 @@
     }
 
     // Handle form submission
+    {% if not is_lender_view %}
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -667,13 +716,11 @@
             const result = await response.json();
 
             if (response.ok) {
-                // Update the dashboard with the prediction result and other data
-                // Note: For a real app, you might fetch all dashboard data after prediction
-                // For now, we are populating some elements with form data and prediction result
-                 updateDashboard(result, formData); // Use the new update function
+                // Update the dashboard with the new prediction result and form data
+                 displayDashboardData(result, formData); // Use the unified display function
 
-                 // Optionally hide the form after prediction is shown
-                 // form.style.display = 'none';
+                 // Show dashboard content after successful prediction
+                 document.getElementById('dashboardContent').style.display = 'block';
 
             } else {
                 alert('Error: ' + result.error);
@@ -685,42 +732,54 @@
             document.getElementById('predictionLoading').style.display = 'none';
         }
     });
+    {% endif %}
 
-     // Initial rendering of charts and gauge if data is already available (e.g., on page load after login)
-     // This part assumes the Flask route passes initial data to the template
-     // If the data is only available after form submission, this part can be removed or adjusted
+     // Initial rendering of dashboard if initial data is available on page load
      document.addEventListener('DOMContentLoaded', function() {
-        // Check if initial data is available and render elements/charts
-        // Example: if ('{{ data | tojson }}' !== '' && '{{ data | tojson }}' !== 'None') {
-        //     const initialData = {{ data | tojson }};
-        //     // Use initialData to populate elements and render charts
-        //     // updateDashboard(initialData, null); // You might need to adapt updateDashboard or create a separate function
-        // }
-         
-         // Initial gauge animation if a score is present on page load
-         const creditScoreElement = document.getElementById('gaugeScore');
-         if (creditScoreElement && !isNaN(parseInt(creditScoreElement.textContent))) {
-             animateGauge(parseInt(creditScoreElement.textContent));
+         // Use the initialDashboardData variable defined in the previous script block
+         try {
+             if (typeof initialDashboardData !== 'undefined' && initialDashboardData !== null) {
+                 const initialData = initialDashboardData; // Data is already parsed JSON
+                 displayDashboardData(initialData);
+                 
+                 let showDashboardOnLoad = false;
+                 if (typeof isLenderView !== 'undefined' && isLenderView) {
+                     // For lender view, always show the dashboard content if initial data is available
+                     showDashboardOnLoad = true;
+                 } else {
+                     // For consumer view, show only if there is a previous prediction result
+                     if (initialData.prediction && initialData.prediction !== 'No prediction yet.' && initialData.prediction !== 'N/A') {
+                          showDashboardOnLoad = true;
+                     }
+                 }
+                 
+                 if (showDashboardOnLoad) {
+                     document.getElementById('dashboardContent').style.display = 'block';
+                 }
+             } else if (typeof isLenderView !== 'undefined' && isLenderView) {
+                  // If it's a lender view and no initial data, still show the empty dashboard structure
+                  document.getElementById('dashboardContent').style.display = 'block';
+             }
+
+         } catch (e) {
+             console.error('Error handling initial dashboard data:', e);
+             // Even on error, if it's a lender view, attempt to show the dashboard structure
+             if (typeof isLenderView !== 'undefined' && isLenderView) {
+                  document.getElementById('dashboardContent').style.display = 'block';
+             }
          }
 
-         // Initial chart rendering if data is available on page load
-        // if (typeof initialData !== 'undefined' && initialData.spending_data) {
-        //      renderSpendingChart(initialData.spending_data);
-        // }
-        // if (typeof initialData !== 'undefined' && initialData.credit_utilization_data) {
-        //      renderCreditUtilizationChart(initialData.credit_utilization_data);
-        // }
-
-         // Note: The current Flask route only passes mock data on initial load.
-         // The form submission handles dynamic updates.
-
+         // Fetch history on page load regardless of initial dashboard data
+         if (typeof userRole !== 'undefined' && userRole === 'consumer') {
+             fetchCreditScoreHistory();
+         }
      });
 
     // Credit Score Simulation
     document.getElementById('simulationType').addEventListener('change', function(e) {
         const optionsDiv = document.getElementById('simulationOptions');
         const type = e.target.value;
-        
+
         let optionsHtml = '';
         switch(type) {
             case 'payment':
@@ -751,41 +810,45 @@
                         <label class="form-label">Loan Amount</label>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="loanAmount" min="1000" step="1000" value="10000">
+                            <input type="number" class="form-control" id="loanAmountSim" min="1000" step="1000" value="10000">
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Loan Term (months)</label>
-                        <input type="number" class="form-control" id="loanTerm" min="12" max="360" step="12" value="36">
+                        <input type="number" class="form-control" id="loanTermSim" min="12" step="12" value="36">
                     </div>
                 `;
                 break;
             case 'utilization':
                 optionsHtml = `
                     <div class="mb-3">
-                        <label class="form-label">Target Utilization (%)</label>
-                        <input type="number" class="form-control" id="targetUtilization" min="0" max="100" step="5" value="30">
+                        <label class="form-label">Target Credit Utilization (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="targetUtilization" min="0" max="100" value="30">
+                            <span class="input-group-text">%</span>
+                        </div>
                     </div>
                 `;
                 break;
         }
-        
         optionsDiv.innerHTML = optionsHtml;
     });
 
-    document.getElementById('simulationForm').addEventListener('submit', async function(e) {
+    // Default simulation options on load
+    document.getElementById('simulationType').dispatchEvent(new Event('change'));
+
+    // Handle simulation form submission
+    document.getElementById('simulationForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        const type = document.getElementById('simulationType').value;
-        const currentScore = parseInt(document.getElementById('gaugeScore').textContent);
-        
-        let requestData = {
-            type: type,
-            currentScore: currentScore
-        };
-        
-        // Add type-specific data
-        switch(type) {
+
+        const form = e.target;
+        const simulationType = document.getElementById('simulationType').value;
+        const currentScore = parseInt(document.getElementById('currentScore').textContent); // Get current score from display
+
+        let requestData = { type: simulationType, currentScore: currentScore };
+
+        // Collect data based on simulation type
+        switch(simulationType) {
             case 'payment':
                 requestData.amount = parseFloat(document.getElementById('paymentAmount').value);
                 break;
@@ -793,14 +856,14 @@
                 requestData.limit = parseFloat(document.getElementById('newLimit').value);
                 break;
             case 'loan':
-                requestData.amount = parseFloat(document.getElementById('loanAmount').value);
-                requestData.term = parseInt(document.getElementById('loanTerm').value);
+                requestData.amount = parseFloat(document.getElementById('loanAmountSim').value);
+                requestData.term = parseInt(document.getElementById('loanTermSim').value);
                 break;
             case 'utilization':
                 requestData.utilization = parseFloat(document.getElementById('targetUtilization').value);
                 break;
         }
-        
+
         try {
             const response = await fetch('/api/credit-score/simulate', {
                 method: 'POST',
@@ -809,113 +872,98 @@
                 },
                 body: JSON.stringify(requestData)
             });
-            
+
             const result = await response.json();
-            
-            // Update simulation results
-            document.querySelector('.simulation-results').style.display = 'block';
-            document.getElementById('currentScore').textContent = currentScore;
-            document.getElementById('simulatedScore').textContent = result.simulatedScore;
-            
-            const scoreChange = result.simulatedScore - currentScore;
-            const changeElement = document.getElementById('scoreChange');
-            changeElement.textContent = `${scoreChange > 0 ? '+' : ''}${scoreChange} points`;
-            changeElement.className = `badge ${scoreChange >= 0 ? 'bg-success' : 'bg-danger'}`;
-            
-            document.getElementById('simulationExplanation').textContent = result.explanation;
-            
-            // Add factors if available
-            if (result.factors && result.factors.length > 0) {
-                const factorsHtml = result.factors.map(factor => 
-                    `<div class="mb-2">
-                        <small class="text-muted">${factor.name}</small>
-                        <div class="text-${factor.impact.startsWith('+') ? 'success' : 'danger'}">
-                            ${factor.impact}
-                        </div>
-                    </div>`
-                ).join('');
-                
-                document.getElementById('simulationExplanation').innerHTML += 
-                    '<div class="mt-3"><strong>Factors Affecting Score:</strong>' + factorsHtml + '</div>';
+
+            if (response.ok) {
+                // Update simulation results display
+                document.getElementById('simulatedScore').textContent = result.simulatedScore;
+                document.getElementById('simulationExplanation').textContent = result.explanation;
+
+                // Update score change badge
+                const scoreChange = result.simulatedScore - currentScore;
+                const scoreChangeBadge = document.getElementById('scoreChange');
+                scoreChangeBadge.textContent = `${scoreChange > 0 ? '+' : ''}${scoreChange} points`;
+                scoreChangeBadge.className = 'badge mt-3 ' + (scoreChange >= 0 ? 'bg-success' : 'bg-danger');
+
+                document.querySelector('.simulation-results').style.display = 'block';
+
+            } else {
+                alert('Error: ' + result.error);
             }
         } catch (error) {
-            console.error('Error simulating credit score:', error);
+            alert('Error: ' + error.message);
         }
     });
 
-    // Trigger initial options load
-    document.getElementById('simulationType').dispatchEvent(new Event('change'));
-
-    // Credit Score History Chart
-    const ctx = document.getElementById('scoreHistoryChart').getContext('2d');
-    
-    // Initialize chart with empty data
-    const scoreChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Credit Score',
-                data: [],
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1,
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `Score: ${context.raw}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    min: 300,
-                    max: 850,
-                    ticks: {
-                        stepSize: 50
-                    }
-                }
-            }
-        }
-    });
-
-    // Fetch credit score history
+    // Fetch and display credit score history
     async function fetchCreditScoreHistory() {
         try {
             const response = await fetch('/api/credit-score/history');
-            const data = await response.json();
-            
-            scoreChart.data.labels = data.labels;
-            scoreChart.data.datasets[0].data = data.scores;
-            scoreChart.update();
-            
-            updateScoreStats(data.scores);
+            const historyData = await response.json();
+
+            if (response.ok) {
+                renderScoreHistoryChart(historyData);
+
+                // Update stats
+                if (historyData.scores && historyData.scores.length > 0) {
+                    document.getElementById('highestScore').textContent = Math.max(...historyData.scores);
+                    document.getElementById('lowestScore').textContent = Math.min(...historyData.scores);
+                    const average = historyData.scores.reduce((a, b) => a + b, 0) / historyData.scores.length;
+                    document.getElementById('averageScore').textContent = Math.round(average);
+                }
+
+            } else {
+                console.error('Error fetching history:', historyData.error);
+            }
         } catch (error) {
-            console.error('Error fetching credit score history:', error);
+            console.error('Error fetching history:', error);
         }
     }
 
-    // Update stats
-    function updateScoreStats(data) {
-        const highest = Math.max(...data);
-        const lowest = Math.min(...data);
-        const average = Math.round(data.reduce((a, b) => a + b, 0) / data.length);
-        
-        document.getElementById('highestScore').textContent = highest;
-        document.getElementById('lowestScore').textContent = lowest;
-        document.getElementById('averageScore').textContent = average;
+    // Render Credit Score History Chart
+    function renderScoreHistoryChart(data) {
+        const ctx = document.getElementById('scoreHistoryChart');
+        if (scoreHistoryChart) scoreHistoryChart.destroy(); // Destroy previous instance
+        scoreHistoryChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Credit Score',
+                    data: data.scores,
+                    borderColor: '#2d6cdf',
+                    backgroundColor: 'rgba(45, 108, 223, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 300, // Minimum possible credit score
+                        suggestedMax: 850  // Maximum possible credit score
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
     }
 
-    // Initialize the dashboard
-    fetchCreditScoreHistory();
+
+</script>
+
+{# Pass initial dashboard data from Flask to JavaScript #}
+<div id="initial-dashboard-data" style="display: none;"></div>
+{# Add a script tag to define JavaScript variables with the data and user role #}
+<script>
+    const initialDashboardData = {{ data | tojson }};
+    const userRole = "{{ user_role }}";
+    const isLenderView = {{ is_lender_view | tojson }};
 </script>
 {% endblock %} 

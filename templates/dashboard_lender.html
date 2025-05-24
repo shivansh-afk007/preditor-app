@@ -13,6 +13,10 @@
         height: 300px;
         width: 100%;
     }
+    .create-customer-btn {
+        float: right;
+        margin-bottom: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -50,15 +54,18 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Client Overview</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Client Overview</h5>
+                    <a href="{{ url_for('create_customer_form') }}" class="btn btn-primary create-customer-btn">
+                        <i class="fas fa-plus"></i> Create New Customer
+                    </a>
+                </div>
                 <div class="client-table-container">
                     <table class="table table-striped">
                         <thead>
                             <tr>
                                 <th>Client Name</th>
-                                <th>Risk Score</th>
-                                <th>Loan Amount</th>
-                                <th>Status</th>
+                                <th>Email</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -66,12 +73,21 @@
                             {% for client in data.client_list %}
                             <tr>
                                 <td>{{ client.name }}</td>
-                                <td>{{ client.risk_score }}</td>
-                                <td>{{ client.loan_amount }}</td>
-                                <td>{{ client.status }}</td>
-                                <td><a href="#">View Details</a></td>
+                                <td>{{ client.email }}</td>
+                                <td>
+                                    {% if client.predictions %}
+                                        <a href="{{ url_for('view_customer_prediction', user_id=client.id) }}" class="btn btn-sm btn-info">View Latest Prediction</a>
+                                    {% else %}
+                                        <span class="text-muted">No predictions yet</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
+                            {% if not data.client_list %}
+                            <tr>
+                                <td colspan="3" class="text-center">No consumer users found. Create a new user above.</td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -162,80 +178,122 @@
     </div>
 </div>
 
+{# --- Add Customer User Form --- #}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Create New Customer User</h5>
+                <p class="card-text">Create a new customer account to manage their credit risk assessments.</p>
+                <a href="{{ url_for('create_customer_form') }}" class="btn btn-primary">Create New Customer</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        {# Placeholder for another lender feature if needed #}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Coming Soon...</h5>
+                <p class="card-text">More features for managing clients and analyzing portfolio performance will be available here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
-{# Script tags to embed JSON data #}
+{% block extra_js %}
+{# Script tags to embed JSON data - Moved inside extra_js block, BEFORE the script #}
 <script type="application/json" id="riskDistributionData">{{ data.risk_distribution_data | tojson | safe }}</script>
 <script type="application/json" id="applicationStatusData">{{ data.application_status_data | tojson | safe }}</script>
 <script type="application/json" id="loanPerformanceData">{{ data.loan_performance_data | tojson | safe }}</script>
 <script type="application/json" id="geographicDistributionData">{{ data.geographic_distribution_data | tojson | safe }}</script>
 
-{% block extra_js %}
 <script>
-    // Read data from the script tags and parse JSON
-    const riskDistributionData = JSON.parse(document.getElementById('riskDistributionData').textContent);
-    const applicationStatusData = JSON.parse(document.getElementById('applicationStatusData').textContent);
-    const loanPerformanceData = JSON.parse(document.getElementById('loanPerformanceData').textContent);
-    const geographicDistributionData = JSON.parse(document.getElementById('geographicDistributionData').textContent);
+    // Removed Helper function to get element by ID with a retry mechanism
+    // function getElementByIdWithRetry(elementId, maxRetries = 10, delay = 50) {
+    //     return new Promise((resolve, reject) => {
+    //         const attemptGetElement = (retriesLeft) => {
+    //             const element = document.getElementById(elementId);
+    //             if (element) {
+    //                 resolve(element);
+    //             } else if (retriesLeft > 0) {
+    //                 setTimeout(() => attemptGetElement(retriesLeft - 1), delay);
+    //             } else {
+    //                 reject(`Element with ID ${elementId} not found after multiple retries.`);
+    //             }
+    //         };
+    //         attemptGetElement(maxRetries);
+    //     });
+    // }
 
-    // Chart.js example for Risk Distribution
-    var riskCtx = document.getElementById('riskDistributionChart');
-    if (riskCtx) {
-         var riskDistributionChart = new Chart(riskCtx, {
-            type: 'pie',
-            data: riskDistributionData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                 plugins: {
-                    title: {
-                        display: false,
-                        text: 'Risk Distribution'
+    // Wrap your script inside DOMContentLoaded to ensure the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', function() { // Changed back to regular function
+        // Read data from the script tags and parse JSON
+        const riskDistributionData = JSON.parse(document.getElementById('riskDistributionData').textContent);
+        const applicationStatusData = JSON.parse(document.getElementById('applicationStatusData').textContent);
+        const loanPerformanceData = JSON.parse(document.getElementById('loanPerformanceData').textContent);
+        const geographicDistributionData = JSON.parse(document.getElementById('geographicDistributionData').textContent);
+
+        // Chart.js example for Risk Distribution
+        var riskCtx = document.getElementById('riskDistributionChart');
+        if (riskCtx) {
+             var riskDistributionChart = new Chart(riskCtx, {
+                type: 'pie',
+                data: riskDistributionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                     plugins: {
+                        title: {
+                            display: false,
+                            text: 'Risk Distribution'
+                        },
+                         legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Chart.js example for Application Status
+         var statusCtx = document.getElementById('applicationStatusChart');
+          if (statusCtx) {
+            var applicationStatusChart = new Chart(statusCtx, {
+                type: 'bar',
+                data: applicationStatusData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     },
-                     legend: { position: 'bottom' }
-                }
-            }
-        });
-    }
-
-    // Chart.js example for Application Status
-     var statusCtx = document.getElementById('applicationStatusChart');
-      if (statusCtx) {
-        var applicationStatusChart = new Chart(statusCtx, {
-            type: 'bar',
-            data: applicationStatusData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
+                     plugins: {
+                        title: {
+                            display: false,
+                            text: 'Application Status Overview'
+                        },
+                        legend: { display: false }
                     }
-                },
-                 plugins: {
-                    title: {
-                        display: false,
-                        text: 'Application Status Overview'
-                    },
-                    legend: { display: false }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    // Chart.js example for Loan Performance
-     var loanPerformanceCtx = document.getElementById('loanPerformanceChart');
-      if (loanPerformanceCtx) {
-        new Chart(loanPerformanceCtx, {
-            type: 'line',
-            data: loanPerformanceData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                 plugins: {
-                    title: {
-                        display: false,
-                        text: 'Loan Performance'
+        // Chart.js example for Loan Performance
+         var loanPerformanceCtx = document.getElementById('loanPerformanceChart');
+          if (loanPerformanceCtx) {
+            new Chart(loanPerformanceCtx, {
+                type: 'line',
+                data: loanPerformanceData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                     plugins: {
+                        title: {
+                            display: false,
+                            text: 'Loan Performance'
+                        }
                     }
                 },
                 scales: {
@@ -243,23 +301,23 @@
                         beginAtZero: true
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
-     // Chart.js example for Geographic Distribution
-     var geoCtx = document.getElementById('geographicDistributionChart');
-      if (geoCtx) {
-        new Chart(geoCtx, {
-            type: 'bar',
-            data: geographicDistributionData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                 plugins: {
-                    title: {
-                        display: false,
-                        text: 'Geographic Distribution'
+         // Chart.js example for Geographic Distribution
+         var geoCtx = document.getElementById('geographicDistributionChart');
+          if (geoCtx) {
+            new Chart(geoCtx, {
+                type: 'bar',
+                data: geographicDistributionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                     plugins: {
+                        title: {
+                            display: false,
+                            text: 'Geographic Distribution'
+                        }
                     }
                 },
                 scales: {
@@ -267,9 +325,43 @@
                         beginAtZero: true
                     }
                 }
+            });
+        }
+
+    }); // Close DOMContentLoaded listener
+
+    // Handle Create Customer Form Submission
+    document.getElementById('createCustomerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const feedbackDiv = document.getElementById('createUserFeedback');
+
+        feedbackDiv.innerHTML = ''; // Clear previous feedback
+
+        try {
+            const response = await fetch("{{ url_for('create_customer') }}", {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                feedbackDiv.innerHTML = `<div class="alert alert-success">User created! Username: ${result.username}, Password: ${result.password} (Temporary)</div>`;
+                form.reset(); // Clear the form
+                // Optionally, refresh the client list table here if implementing dynamic updates
+                 setTimeout(() => { location.reload(); }, 3000); // Simple refresh after 3 seconds for demo
+            } else {
+                feedbackDiv.innerHTML = `<div class="alert alert-danger">Error: ${result.error}</div>`;
             }
-        });
-    }
+        } catch (error) {
+            console.error('Error creating user:', error);
+            feedbackDiv.innerHTML = '<div class="alert alert-danger">An unexpected error occurred.</div>';
+        }
+    });
 
 </script>
+
 {% endblock %} 

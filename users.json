@@ -1,12 +1,119 @@
 {
     "1": {
-        "username": "shivansh.gupta.iit@gmail.com",
-        "password": "Test@123",
-        "role": "consumer"
-    },
-    "2": {
-        "username": "john.doe",
-        "password": "Test@123",
+        "username": "shivam_lender",
+        "password": "pbkdf2:sha256:600000$aso8eKu2vTJQuZsO$266ef0370c1c2bde98b67fb9827b3fc9f3f05597becae17160fe5c566204aea0",
         "role": "lender"
+    },
+    "4bb10690-5ae6-41a9-8600-c4a28a6ffaa8": {
+        "id": "4bb10690-5ae6-41a9-8600-c4a28a6ffaa8",
+        "name": "shivam_consumer",
+        "email": "shivam_consumer@consumer.com",
+        "username": "shivam_consumer@consumer.com",
+        "password": "pbkdf2:sha256:600000$XcB3xRcrL2b5Smc5$b5ff9b31166be4ea0e7f28867fdd27fc2889d3ebcb44a5288d8d948ea4a5a66b",
+        "role": "consumer",
+        "created_by": "1",
+        "predictions": [
+            {
+                "timestamp": "2025-05-24T20:22:29.368777",
+                "input_data": {
+                    "person_age": 27.0,
+                    "person_income": 65000.0,
+                    "loan_amnt": 5000.0,
+                    "person_emp_length": 12.0,
+                    "cb_person_cred_hist_length": 600.0,
+                    "person_home_ownership": "Employed",
+                    "loan_intent": "Master's",
+                    "loan_grade": "Single",
+                    "loan_int_rate": 12.0,
+                    "loan_percent_income": 0.15,
+                    "cb_person_default_on_file": "N"
+                },
+                "prediction_result": "Low Risk",
+                "probabilities": [
+                    [
+                        0.8501793007381189,
+                        0.14982069926188138
+                    ]
+                ],
+                "recommendations": [
+                    "Your credit profile looks good! Maintain your current financial habits.",
+                    "You could potentially get better rates by improving your credit score further.",
+                    "You may be eligible for larger loan amounts if needed."
+                ]
+            }
+        ]
+    },
+    "d91fbb15-19cf-4903-a13d-a6a44c228cb5": {
+        "id": "d91fbb15-19cf-4903-a13d-a6a44c228cb5",
+        "name": "test user 2",
+        "email": "test.user2@test.com",
+        "username": "test.user2@test.com",
+        "password": "pbkdf2:sha256:600000$OBybS3GFeGQz7kjx$c235ce5238f16c1ab850caf2f33c491322a5b13416434371f0078e952c4b7ddf",
+        "role": "consumer",
+        "created_by": "1",
+        "predictions": [
+            {
+                "timestamp": "2025-05-24T20:56:41.601963",
+                "input_data": {
+                    "person_age": 32.0,
+                    "person_income": 100000.0,
+                    "loan_amnt": 7500.0,
+                    "person_emp_length": 12.0,
+                    "cb_person_cred_hist_length": 720.0,
+                    "person_home_ownership": "Employed",
+                    "loan_intent": "Master's",
+                    "loan_grade": "Single",
+                    "loan_int_rate": 12.0,
+                    "loan_percent_income": 0.15,
+                    "cb_person_default_on_file": "N"
+                },
+                "prediction_result": "Low Risk",
+                "probabilities": [
+                    0.8669921464438586,
+                    0.13300785355614136
+                ],
+                "recommendations": [
+                    "Your credit profile looks good! Maintain your current financial habits.",
+                    "You may be eligible for larger loan amounts if needed."
+                ]
+            }
+        ]
+    },
+    "c1f25d1f-1106-466c-85b4-ebed667ec194": {
+        "id": "c1f25d1f-1106-466c-85b4-ebed667ec194",
+        "name": "kathan pathak",
+        "email": "kathan.pathan@gmail.com",
+        "username": "kathan.pathan@gmail.com",
+        "password": "pbkdf2:sha256:600000$G4Wgo5HcLy4QR1PH$f1c2552f59173ef9a46edba1c1c52358c49a76ac51f386e82dd9964b2040356e",
+        "role": "consumer",
+        "created_by": "1",
+        "predictions": [
+            {
+                "timestamp": "2025-05-24T21:16:43.580575",
+                "input_data": {
+                    "person_age": 32.0,
+                    "person_income": 100000.0,
+                    "loan_amnt": 5000.0,
+                    "person_emp_length": 12.0,
+                    "cb_person_cred_hist_length": 680.0,
+                    "person_home_ownership": "Employed",
+                    "loan_intent": "Master's",
+                    "loan_grade": "Single",
+                    "loan_int_rate": 12.0,
+                    "loan_percent_income": 0.15,
+                    "cb_person_default_on_file": "N"
+                },
+                "prediction_result": "Low Risk",
+                "probabilities": [
+                    0.8649463694597493,
+                    0.1350536305402506
+                ],
+                "recommendations": [
+                    "Your credit profile looks good! Maintain your current financial habits.",
+                    "You could potentially get better rates by improving your credit score further.",
+                    "You may be eligible for larger loan amounts if needed."
+                ]
+            }
+        ]
     }
 }

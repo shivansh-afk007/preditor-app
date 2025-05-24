@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ super() }} - Customer Created{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Customer Created Successfully!</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Customer Credentials</h5>
+                        <p><strong>Username:</strong> {{ username }}</p>
+                        <p><strong>Password:</strong> {{ password }}</p>
+                        <p class="text-danger"><small>Please save these credentials. The password cannot be recovered later.</small></p>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('lender_dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

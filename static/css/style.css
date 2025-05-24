@@ -28,7 +28,7 @@ body {
 }
 
 .navbar-brand img {
-    height: 30px; /* Adjust as needed */
+    height: 60px; /* Reduced size by 25% */
     margin-right: 10px;
 }
 

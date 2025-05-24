@@ -6,7 +6,7 @@
 <style>
     /* Landing Page Specific Styles */
     .hero-section {
-        background: linear-gradient(rgba(45, 109, 223, 0.8), rgba(45, 109, 223, 0.8)), url("{{ url_for('static', filename='images/AltFiScore lanidng page.png') }}") no-repeat center center;
+        background: linear-gradient(rgba(45, 109, 223, 0.8), rgba(45, 109, 223, 0.8)), url("{{ url_for('static', filename='images/AltFiScore AI Logo.png') }}") no-repeat center center;
         background-size: cover;
         color: #fff;
         padding: 8rem 0;
@@ -205,8 +205,8 @@
             {# Add more about text #}
         </div>
         <div class="col-md-6">
-             {# Placeholder for a relevant image in the about section #}
-            <img src="https://via.placeholder.com/600x400" class="img-fluid" alt="About Us Image">
+             {# Replaced placeholder image with the logo #}
+            <img src="{{ url_for('static', filename='images/AltFiScore AI Logo.png') }}" class="img-fluid" alt="About Us Image">
         </div>
     </div>
 
