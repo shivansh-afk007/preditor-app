@@ -33,10 +33,10 @@
         margin: 0 auto;
     }
     .gauge-score {
-        font-size: 3.2rem;
+        font-size: 3.6rem;
         font-weight: 800;
         color: #2563eb;
-        margin-top: -120px;
+        margin-top: -100px;
         margin-bottom: 0.2rem;
         letter-spacing: -2px;
     }
@@ -44,6 +44,7 @@
         font-size: 1.5rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
+        margin-top: 30px;
     }
     .gauge-status-poor { color: #e74c3c; }
     .gauge-status-fair { color: #f39c12; }
@@ -350,11 +351,103 @@
             </div>
         </div>
     </div>
+
+    {# --- Add this after the Prediction and Recommendations section --- #}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Credit Score Simulator</h5>
+                    <p class="text-muted">See how different actions might affect your credit score</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <form id="simulationForm" class="mb-4">
+                                <div class="mb-3">
+                                    <label class="form-label">What would you like to simulate?</label>
+                                    <select class="form-select" id="simulationType">
+                                        <option value="payment">Making a large payment</option>
+                                        <option value="credit">Increasing credit limit</option>
+                                        <option value="loan">Taking a new loan</option>
+                                        <option value="utilization">Changing credit utilization</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="simulationOptions">
+                                    <!-- Dynamic options will be loaded here -->
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-calculator me-2"></i>Simulate Impact
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="simulation-results" style="display: none;">
+                                <h6>Simulated Impact</h6>
+                                <div class="current-score mb-3">
+                                    <small class="text-muted">Current Score</small>
+                                    <div class="display-6" id="currentScore">750</div>
+                                </div>
+                                <div class="simulated-score">
+                                    <small class="text-muted">Simulated Score</small>
+                                    <div class="display-6" id="simulatedScore">780</div>
+                                </div>
+                                <div class="score-change mt-3">
+                                    <span class="badge bg-success" id="scoreChange">+30 points</span>
+                                </div>
+                                <div class="simulation-explanation mt-3">
+                                    <p id="simulationExplanation" class="text-muted"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- Add this after the Credit Score Simulator section --- #}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Credit Score History</h5>
+                    <p class="text-muted">Track your credit score changes over time</p>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <canvas id="scoreHistoryChart"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="score-stats">
+                                <div class="stat-item mb-3">
+                                    <small class="text-muted">Highest Score</small>
+                                    <div class="h4" id="highestScore">780</div>
+                                </div>
+                                <div class="stat-item mb-3">
+                                    <small class="text-muted">Lowest Score</small>
+                                    <div class="h4" id="lowestScore">720</div>
+                                </div>
+                                <div class="stat-item">
+                                    <small class="text-muted">Average Score</small>
+                                    <div class="h4" id="averageScore">750</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Tooltip initialization
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -623,5 +716,206 @@
 
      });
 
+    // Credit Score Simulation
+    document.getElementById('simulationType').addEventListener('change', function(e) {
+        const optionsDiv = document.getElementById('simulationOptions');
+        const type = e.target.value;
+        
+        let optionsHtml = '';
+        switch(type) {
+            case 'payment':
+                optionsHtml = `
+                    <div class="mb-3">
+                        <label class="form-label">Payment Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="paymentAmount" min="100" step="100" value="1000">
+                        </div>
+                    </div>
+                `;
+                break;
+            case 'credit':
+                optionsHtml = `
+                    <div class="mb-3">
+                        <label class="form-label">New Credit Limit</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="newLimit" min="1000" step="1000" value="5000">
+                        </div>
+                    </div>
+                `;
+                break;
+            case 'loan':
+                optionsHtml = `
+                    <div class="mb-3">
+                        <label class="form-label">Loan Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="loanAmount" min="1000" step="1000" value="10000">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Loan Term (months)</label>
+                        <input type="number" class="form-control" id="loanTerm" min="12" max="360" step="12" value="36">
+                    </div>
+                `;
+                break;
+            case 'utilization':
+                optionsHtml = `
+                    <div class="mb-3">
+                        <label class="form-label">Target Utilization (%)</label>
+                        <input type="number" class="form-control" id="targetUtilization" min="0" max="100" step="5" value="30">
+                    </div>
+                `;
+                break;
+        }
+        
+        optionsDiv.innerHTML = optionsHtml;
+    });
+
+    document.getElementById('simulationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const type = document.getElementById('simulationType').value;
+        const currentScore = parseInt(document.getElementById('gaugeScore').textContent);
+        
+        let requestData = {
+            type: type,
+            currentScore: currentScore
+        };
+        
+        // Add type-specific data
+        switch(type) {
+            case 'payment':
+                requestData.amount = parseFloat(document.getElementById('paymentAmount').value);
+                break;
+            case 'credit':
+                requestData.limit = parseFloat(document.getElementById('newLimit').value);
+                break;
+            case 'loan':
+                requestData.amount = parseFloat(document.getElementById('loanAmount').value);
+                requestData.term = parseInt(document.getElementById('loanTerm').value);
+                break;
+            case 'utilization':
+                requestData.utilization = parseFloat(document.getElementById('targetUtilization').value);
+                break;
+        }
+        
+        try {
+            const response = await fetch('/api/credit-score/simulate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            const result = await response.json();
+            
+            // Update simulation results
+            document.querySelector('.simulation-results').style.display = 'block';
+            document.getElementById('currentScore').textContent = currentScore;
+            document.getElementById('simulatedScore').textContent = result.simulatedScore;
+            
+            const scoreChange = result.simulatedScore - currentScore;
+            const changeElement = document.getElementById('scoreChange');
+            changeElement.textContent = `${scoreChange > 0 ? '+' : ''}${scoreChange} points`;
+            changeElement.className = `badge ${scoreChange >= 0 ? 'bg-success' : 'bg-danger'}`;
+            
+            document.getElementById('simulationExplanation').textContent = result.explanation;
+            
+            // Add factors if available
+            if (result.factors && result.factors.length > 0) {
+                const factorsHtml = result.factors.map(factor => 
+                    `<div class="mb-2">
+                        <small class="text-muted">${factor.name}</small>
+                        <div class="text-${factor.impact.startsWith('+') ? 'success' : 'danger'}">
+                            ${factor.impact}
+                        </div>
+                    </div>`
+                ).join('');
+                
+                document.getElementById('simulationExplanation').innerHTML += 
+                    '<div class="mt-3"><strong>Factors Affecting Score:</strong>' + factorsHtml + '</div>';
+            }
+        } catch (error) {
+            console.error('Error simulating credit score:', error);
+        }
+    });
+
+    // Trigger initial options load
+    document.getElementById('simulationType').dispatchEvent(new Event('change'));
+
+    // Credit Score History Chart
+    const ctx = document.getElementById('scoreHistoryChart').getContext('2d');
+    
+    // Initialize chart with empty data
+    const scoreChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Credit Score',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.raw}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 300,
+                    max: 850,
+                    ticks: {
+                        stepSize: 50
+                    }
+                }
+            }
+        }
+    });
+
+    // Fetch credit score history
+    async function fetchCreditScoreHistory() {
+        try {
+            const response = await fetch('/api/credit-score/history');
+            const data = await response.json();
+            
+            scoreChart.data.labels = data.labels;
+            scoreChart.data.datasets[0].data = data.scores;
+            scoreChart.update();
+            
+            updateScoreStats(data.scores);
+        } catch (error) {
+            console.error('Error fetching credit score history:', error);
+        }
+    }
+
+    // Update stats
+    function updateScoreStats(data) {
+        const highest = Math.max(...data);
+        const lowest = Math.min(...data);
+        const average = Math.round(data.reduce((a, b) => a + b, 0) / data.length);
+        
+        document.getElementById('highestScore').textContent = highest;
+        document.getElementById('lowestScore').textContent = lowest;
+        document.getElementById('averageScore').textContent = average;
+    }
+
+    // Initialize the dashboard
+    fetchCreditScoreHistory();
 </script>
 {% endblock %} 

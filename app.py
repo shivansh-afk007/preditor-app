@@ -4,6 +4,8 @@ import joblib
 import pandas as pd
 import os
 import json # Using json for simple user data storage for now
+from datetime import datetime, timedelta
+import random  # For demo purposes, replace with actual data in production
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here' # Replace with a real secret key
@@ -233,20 +235,26 @@ def predict():
          return jsonify({'error': 'Model not trained. Please run the training script first.'}), 500
 
     try:
-        # Get data from the form
+        # Get data from the form and map to model feature names
         data = {
-            'Age': float(request.form.get('age')),
-            'Income': float(request.form.get('income')),
-            'LoanAmount': float(request.form.get('loan_amount')),
-            'LoanTerm': float(request.form.get('loan_term')),
-            'CreditScore': float(request.form.get('credit_score')),
-            'EmploymentStatus': request.form.get('employment_status'),
-            'Education': request.form.get('education'),
-            'MaritalStatus': request.form.get('marital_status')
+            'person_age': float(request.form.get('age')), # Map 'age' to 'person_age'
+            'person_income': float(request.form.get('income')), # Map 'income' to 'person_income'
+            'loan_amnt': float(request.form.get('loan_amount')), # Map 'loan_amount' to 'loan_amnt'
+            'person_emp_length': float(request.form.get('loan_term')), # Map 'loan_term' to 'person_emp_length' (using loan term as proxy)
+            'cb_person_cred_hist_length': float(request.form.get('credit_score')), # Map 'credit_score' to 'cb_person_cred_hist_length' (using credit score as proxy)
+            'person_home_ownership': request.form.get('employment_status'), # Map 'employment_status' to 'person_home_ownership' (using employment status as proxy)
+            'loan_intent': request.form.get('education'), # Map 'education' to 'loan_intent' (using education as proxy)
+            'loan_grade': request.form.get('marital_status'), # Map 'marital_status' to 'loan_grade' (using marital status as proxy)
+            
+            # Add placeholder values for features not in the form
+            'loan_int_rate': 12.0, # Placeholder
+            'loan_percent_income': 0.15, # Placeholder
+            'cb_person_default_on_file': 'N' # Placeholder
         }
 
-        # Ensure all required fields are present and valid
-        if any(v is None for v in data.values()):
+        # Ensure all required fields are present and valid (check original form fields)
+        required_form_fields = ['age', 'income', 'loan_amount', 'loan_term', 'credit_score', 'employment_status', 'education', 'marital_status']
+        if any(request.form.get(field) is None for field in required_form_fields):
              return jsonify({'error': 'Missing form data'}), 400
 
         # Convert to DataFrame
@@ -263,17 +271,17 @@ def predict():
         recommendations = []
         # Generate recommendations based on input data
         if predictions[0] == 1:  # High risk
-            if data['CreditScore'] < 600:
+            if data['cb_person_cred_hist_length'] < 600:
                 recommendations.append('Consider improving your credit score by paying bills on time and reducing debt.')
-            if data['Income'] < 30000:
+            if data['person_income'] < 30000:
                 recommendations.append('Look for ways to increase your income or reduce the loan amount.')
-            if data['LoanAmount'] > data['Income'] * 0.5:
+            if data['loan_amnt'] > data['person_income'] * 0.5:
                 recommendations.append('Consider requesting a smaller loan amount relative to your income.')
         else:  # Low risk
             recommendations.append('Your credit profile looks good! Maintain your current financial habits.')
-            if data['CreditScore'] < 700:
+            if data['cb_person_cred_hist_length'] < 700:
                 recommendations.append('You could potentially get better rates by improving your credit score further.')
-            if data['LoanAmount'] < data['Income'] * 0.2:
+            if data['loan_amnt'] < data['person_income'] * 0.2:
                 recommendations.append('You may be eligible for larger loan amounts if needed.')
 
         result = {
@@ -290,6 +298,86 @@ def predict():
         print(f"Prediction Error: {e}")
         return jsonify({'error': 'An error occurred during prediction. Please check inputs.'}), 500
 
+@app.route('/api/credit-score/history')
+@login_required
+def get_credit_score_history():
+    if current_user.role != 'consumer':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Generate sample data for the last 6 months
+    # In production, this should come from a database
+    today = datetime.now()
+    dates = [(today - timedelta(days=30*i)).strftime('%b') for i in range(5, -1, -1)]
+    
+    # Base score with some random variation
+    base_score = 750
+    scores = [base_score + random.randint(-20, 20) for _ in range(6)]
+    
+    return jsonify({
+        'labels': dates,
+        'scores': scores
+    })
+
+@app.route('/api/credit-score/simulate', methods=['POST'])
+@login_required
+def simulate_credit_score():
+    if current_user.role != 'consumer':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    simulation_type = data.get('type')
+    current_score = data.get('currentScore', 750)  # Default to 750 if not provided
+    
+    # Simple simulation logic (replace with more sophisticated calculations in production)
+    result = {
+        'simulatedScore': current_score,
+        'explanation': '',
+        'factors': []
+    }
+    
+    if simulation_type == 'payment':
+        amount = float(data.get('amount', 0))
+        increase = min(30, int(amount / 1000) * 5)
+        result['simulatedScore'] = current_score + increase
+        result['explanation'] = f'Making a payment of ${amount:,.2f} could improve your score by reducing your credit utilization.'
+        result['factors'] = [
+            {'name': 'Credit Utilization', 'impact': f'+{increase} points'},
+            {'name': 'Payment History', 'impact': '+5 points'}
+        ]
+    
+    elif simulation_type == 'credit':
+        new_limit = float(data.get('limit', 0))
+        increase = min(20, int(new_limit / 5000) * 5)
+        result['simulatedScore'] = current_score + increase
+        result['explanation'] = f'Increasing your credit limit to ${new_limit:,.2f} could improve your score by lowering your credit utilization ratio.'
+        result['factors'] = [
+            {'name': 'Credit Utilization', 'impact': f'+{increase} points'},
+            {'name': 'Available Credit', 'impact': '+5 points'}
+        ]
+    
+    elif simulation_type == 'loan':
+        amount = float(data.get('amount', 0))
+        term = int(data.get('term', 36))
+        decrease = min(20, int(amount / 10000) * 5)
+        result['simulatedScore'] = current_score - decrease
+        result['explanation'] = f'Taking a new loan of ${amount:,.2f} for {term} months might temporarily lower your score.'
+        result['factors'] = [
+            {'name': 'New Credit Inquiry', 'impact': '-5 points'},
+            {'name': 'Debt-to-Income Ratio', 'impact': f'-{decrease} points'}
+        ]
+    
+    elif simulation_type == 'utilization':
+        target_util = float(data.get('utilization', 30))
+        current_util = 30  # This should come from actual data
+        change = int((current_util - target_util) / 5) * 10
+        result['simulatedScore'] = current_score + change
+        result['explanation'] = f'Reducing your credit utilization from {current_util}% to {target_util}% could improve your score.'
+        result['factors'] = [
+            {'name': 'Credit Utilization', 'impact': f'{change:+d} points'},
+            {'name': 'Credit Mix', 'impact': '+5 points'}
+        ]
+    
+    return jsonify(result)
 
 if __name__ == '__main__':
     # Create users.json if it doesn't exist

@@ -1,0 +1,19 @@
+{
+    "accuracy": 0.9065520945220193,
+    "roc_auc": 0.9149685361247857,
+    "feature_importance": {
+        "person_age": 0.011015156222799019,
+        "person_income": 0.1316671476921315,
+        "person_home_ownership": 0.04519153496862504,
+        "person_emp_length": 0.09390603268215286,
+        "loan_intent": 0.2769648451078385,
+        "loan_grade": 0.03385706672708248,
+        "loan_amnt": 0.0077043527260560515,
+        "loan_int_rate": 0.039140949412546935,
+        "loan_percent_income": 0.0007246780075454913,
+        "cb_person_default_on_file": 0.028363773918254426,
+        "cb_person_cred_hist_length": 0.07499972067710392
+    },
+    "timestamp": "2025-05-24T16:21:01.874744",
+    "version": "1.0.0"
+}

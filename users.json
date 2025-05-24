@@ -3,5 +3,10 @@
         "username": "shivansh.gupta.iit@gmail.com",
         "password": "Test@123",
         "role": "consumer"
+    },
+    "2": {
+        "username": "john.doe",
+        "password": "Test@123",
+        "role": "lender"
     }
 }

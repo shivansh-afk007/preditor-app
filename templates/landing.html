@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{{ super() }} - Welcome{% endblock %}
+{% block title %}{{ super() }} - Landing{% endblock %}
 
 {% block extra_css %}
 <style>
     /* Landing Page Specific Styles */
     .hero-section {
-        background: linear-gradient(rgba(45, 109, 223, 0.8), rgba(45, 109, 223, 0.8)), url('{{ url_for(\'static\', filename=\'images/AltFiScore lanidng page.png\') }}') no-repeat center center;
+        background: linear-gradient(rgba(45, 109, 223, 0.8), rgba(45, 109, 223, 0.8)), url("{{ url_for('static', filename='images/AltFiScore lanidng page.png') }}") no-repeat center center;
         background-size: cover;
         color: #fff;
         padding: 8rem 0;
@@ -257,4 +257,3 @@
         <p>&copy; 2023 AltFiScore AI. All rights reserved.</p>
     </div>
 </footer> 
-{% endblock %} 
