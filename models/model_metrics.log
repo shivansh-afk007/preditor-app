@@ -1578,3 +1578,72 @@
 2025-05-24 21:25:12,521 - INFO - 127.0.0.1 - - [24/May/2025 21:25:12] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
 2025-05-24 21:25:12,552 - INFO - 127.0.0.1 - - [24/May/2025 21:25:12] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
 2025-05-24 21:25:12,554 - INFO - 127.0.0.1 - - [24/May/2025 21:25:12] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:30:27,369 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-05-25 03:30:27,369 - INFO - [33mPress CTRL+C to quit[0m
+2025-05-25 03:30:27,380 - INFO -  * Restarting with stat
+2025-05-25 03:30:32,734 - WARNING -  * Debugger is active!
+2025-05-25 03:30:32,744 - INFO -  * Debugger PIN: 125-967-071
+2025-05-25 03:31:23,041 - INFO - 127.0.0.1 - - [25/May/2025 03:31:23] "GET /view_customer_prediction/c1f25d1f-1106-466c-85b4-ebed667ec194 HTTP/1.1" 200 -
+2025-05-25 03:31:23,387 - INFO - 127.0.0.1 - - [25/May/2025 03:31:23] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:31:23,401 - INFO - 127.0.0.1 - - [25/May/2025 03:31:23] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:31:23,810 - INFO - 127.0.0.1 - - [25/May/2025 03:31:23] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-05-25 03:31:25,278 - INFO - 127.0.0.1 - - [25/May/2025 03:31:25] "[32mGET / HTTP/1.1[0m" 302 -
+2025-05-25 03:31:26,016 - INFO - 127.0.0.1 - - [25/May/2025 03:31:26] "[35m[1mGET /dashboard/lender HTTP/1.1[0m" 500 -
+2025-05-25 03:31:26,174 - INFO - 127.0.0.1 - - [25/May/2025 03:31:26] "[36mGET /dashboard/lender?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:31:26,182 - INFO - 127.0.0.1 - - [25/May/2025 03:31:26] "GET /dashboard/lender?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+2025-05-25 03:31:26,297 - INFO - 127.0.0.1 - - [25/May/2025 03:31:26] "[36mGET /dashboard/lender?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-05-25 03:31:26,408 - INFO - 127.0.0.1 - - [25/May/2025 03:31:26] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-05-25 03:31:26,429 - INFO - 127.0.0.1 - - [25/May/2025 03:31:26] "[36mGET /dashboard/lender?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-05-25 03:32:24,040 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-05-25 03:32:24,040 - INFO - [33mPress CTRL+C to quit[0m
+2025-05-25 03:32:24,045 - INFO -  * Restarting with stat
+2025-05-25 03:32:28,852 - WARNING -  * Debugger is active!
+2025-05-25 03:32:28,861 - INFO -  * Debugger PIN: 125-967-071
+2025-05-25 03:32:41,009 - INFO - 127.0.0.1 - - [25/May/2025 03:32:41] "GET /dashboard/lender HTTP/1.1" 200 -
+2025-05-25 03:32:41,050 - INFO - 127.0.0.1 - - [25/May/2025 03:32:41] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-05-25 03:32:41,278 - INFO - 127.0.0.1 - - [25/May/2025 03:32:41] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:32:41,283 - INFO - 127.0.0.1 - - [25/May/2025 03:32:41] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:33:02,434 - INFO - 127.0.0.1 - - [25/May/2025 03:33:02] "[32mGET / HTTP/1.1[0m" 302 -
+2025-05-25 03:33:02,459 - INFO - 127.0.0.1 - - [25/May/2025 03:33:02] "GET /dashboard/lender HTTP/1.1" 200 -
+2025-05-25 03:33:02,557 - INFO - 127.0.0.1 - - [25/May/2025 03:33:02] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:33:02,557 - INFO - 127.0.0.1 - - [25/May/2025 03:33:02] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:33:04,143 - INFO - 127.0.0.1 - - [25/May/2025 03:33:04] "[32mGET / HTTP/1.1[0m" 302 -
+2025-05-25 03:33:04,155 - INFO - 127.0.0.1 - - [25/May/2025 03:33:04] "GET /dashboard/lender HTTP/1.1" 200 -
+2025-05-25 03:33:04,233 - INFO - 127.0.0.1 - - [25/May/2025 03:33:04] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:33:04,240 - INFO - 127.0.0.1 - - [25/May/2025 03:33:04] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:33:04,992 - INFO - 127.0.0.1 - - [25/May/2025 03:33:04] "[32mGET / HTTP/1.1[0m" 302 -
+2025-05-25 03:33:05,003 - INFO - 127.0.0.1 - - [25/May/2025 03:33:05] "GET /dashboard/lender HTTP/1.1" 200 -
+2025-05-25 03:33:05,065 - INFO - 127.0.0.1 - - [25/May/2025 03:33:05] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:33:05,067 - INFO - 127.0.0.1 - - [25/May/2025 03:33:05] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:33:06,456 - INFO - 127.0.0.1 - - [25/May/2025 03:33:06] "[32mGET /logout HTTP/1.1[0m" 302 -
+2025-05-25 03:33:06,486 - INFO - 127.0.0.1 - - [25/May/2025 03:33:06] "GET / HTTP/1.1" 200 -
+2025-05-25 03:33:06,576 - INFO - 127.0.0.1 - - [25/May/2025 03:33:06] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:33:06,576 - INFO - 127.0.0.1 - - [25/May/2025 03:33:06] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:33:08,186 - INFO - 127.0.0.1 - - [25/May/2025 03:33:08] "GET /login HTTP/1.1" 200 -
+2025-05-25 03:33:08,227 - INFO - 127.0.0.1 - - [25/May/2025 03:33:08] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:33:08,235 - INFO - 127.0.0.1 - - [25/May/2025 03:33:08] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:33:15,936 - INFO - 127.0.0.1 - - [25/May/2025 03:33:15] "[32mPOST /login HTTP/1.1[0m" 302 -
+2025-05-25 03:33:15,948 - INFO - 127.0.0.1 - - [25/May/2025 03:33:15] "GET /dashboard/lender HTTP/1.1" 200 -
+2025-05-25 03:33:16,013 - INFO - 127.0.0.1 - - [25/May/2025 03:33:16] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:33:16,017 - INFO - 127.0.0.1 - - [25/May/2025 03:33:16] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:34:57,527 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-05-25 03:34:57,527 - INFO - [33mPress CTRL+C to quit[0m
+2025-05-25 03:34:57,530 - INFO -  * Restarting with stat
+2025-05-25 03:35:01,804 - WARNING -  * Debugger is active!
+2025-05-25 03:35:01,812 - INFO -  * Debugger PIN: 125-967-071
+2025-05-25 03:35:23,878 - INFO - 127.0.0.1 - - [25/May/2025 03:35:23] "GET /dashboard/lender HTTP/1.1" 200 -
+2025-05-25 03:35:24,230 - INFO - 127.0.0.1 - - [25/May/2025 03:35:24] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:35:24,237 - INFO - 127.0.0.1 - - [25/May/2025 03:35:24] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:35:33,830 - INFO - 127.0.0.1 - - [25/May/2025 03:35:33] "GET /view_customer_prediction/c1f25d1f-1106-466c-85b4-ebed667ec194 HTTP/1.1" 200 -
+2025-05-25 03:35:33,934 - INFO - 127.0.0.1 - - [25/May/2025 03:35:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:35:33,942 - INFO - 127.0.0.1 - - [25/May/2025 03:35:33] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:36:23,307 - INFO - 127.0.0.1 - - [25/May/2025 03:36:23] "[32mGET / HTTP/1.1[0m" 302 -
+2025-05-25 03:36:23,340 - INFO - 127.0.0.1 - - [25/May/2025 03:36:23] "GET /dashboard/lender HTTP/1.1" 200 -
+2025-05-25 03:36:23,432 - INFO - 127.0.0.1 - - [25/May/2025 03:36:23] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -
+2025-05-25 03:36:23,432 - INFO - 127.0.0.1 - - [25/May/2025 03:36:23] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:37:15,098 - INFO - 127.0.0.1 - - [25/May/2025 03:37:15] "GET /view_customer_prediction/4bb10690-5ae6-41a9-8600-c4a28a6ffaa8 HTTP/1.1" 200 -
+2025-05-25 03:37:15,180 - INFO - 127.0.0.1 - - [25/May/2025 03:37:15] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-25 03:37:15,196 - INFO - 127.0.0.1 - - [25/May/2025 03:37:15] "[36mGET /static/images/AltFiScore%20AI%20Logo.png HTTP/1.1[0m" 304 -

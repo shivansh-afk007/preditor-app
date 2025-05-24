@@ -244,24 +244,7 @@ def lender_dashboard():
     if current_user.role != 'lender':
         return redirect(url_for('dashboard_consumer')) # Redirect if not a lender
 
-    users_data = load_users()
-    consumer_users = [user for user_id, user in users_data.items() if user['role'] == 'consumer']
-
-    # Placeholder data for lender dashboard charts and stats
-    data = {
-        'total_clients': len(consumer_users),
-        'total_assets': 15000000, # Example data
-        'avg_risk_score': 720, # Example data
-        'client_list': consumer_users, # Pass consumer users to the template
-        'risk_distribution_data': {'labels': ['Low Risk', 'Medium Risk', 'High Risk'], 'datasets': [{'data': [60, 30, 10], 'backgroundColor': ['#27ae60', '#f39c12', '#e74c3c']}]}, # Example chart data
-        'application_status_data': {'labels': ['Approved', 'Pending', 'Rejected'], 'datasets': [{'data': [75, 15, 10], 'backgroundColor': ['#2563eb', '#f39c12', '#e74c3c']}]}, # Example chart data
-        'loan_performance_data': {'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], 'datasets': [{'label': 'Approval Rate', 'data': [65, 70, 72, 75, 78, 80], 'borderColor': '#27ae60', 'fill': False}]}, # Example chart data
-        'geographic_distribution_data': {'labels': ['North', 'South', 'East', 'West'], 'datasets': [{'label': 'Clients', 'data': [250, 150, 200, 100], 'backgroundColor': ['#2d6cdf', '#1cc88a', '#f6c23e', '#e74a4b']}]}, # Example chart data
-        'recent_applications': [
-            {'name': 'John Doe', 'amount': 10000, 'score': 750, 'date': '2023-10-26', 'status': 'Approved'},
-            {'name': 'Jane Smith', 'amount': 5000, 'score': 680, 'date': '2023-10-25', 'status': 'Pending'},
-        ] # Example data
-    }
+    data = get_lender_dashboard_data()
 
     return render_template('dashboard_lender.html', data=data)
 
@@ -532,6 +515,28 @@ def view_customer_prediction(user_id):
 
     # Render the consumer dashboard template, passing the data and a lender view flag
     return render_template('dashboard_consumer.html', data=dashboard_data, is_lender_view=True, user_role=current_user.role)
+
+def get_lender_dashboard_data():
+    users_data = load_users()
+    consumer_users = [user for user_id, user in users_data.items() if user['role'] == 'consumer']
+
+    # Placeholder data for lender dashboard charts and stats
+    data = {
+        'total_clients': len(consumer_users),
+        'total_assets': 15000000, # Example data
+        'avg_risk_score': 720, # Example data
+        'client_list': consumer_users, # Pass consumer users to the template
+        'risk_distribution_data': {'labels': ['Low Risk', 'Medium Risk', 'High Risk'], 'datasets': [{'data': [60, 30, 10], 'backgroundColor': ['#27ae60', '#f39c12', '#e74c3c']}]}, # Example chart data
+        'application_status_data': {'labels': ['Approved', 'Pending', 'Rejected'], 'datasets': [{'data': [75, 15, 10], 'backgroundColor': ['#2563eb', '#f39c12', '#e74c3c']}]}, # Example chart data
+        'loan_performance_data': {'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], 'datasets': [{'label': 'Approval Rate', 'data': [65, 70, 72, 75, 78, 80], 'borderColor': '#27ae60', 'fill': False}]}, # Example chart data
+        'geographic_distribution_data': {'labels': ['North', 'South', 'East', 'West'], 'datasets': [{'label': 'Clients', 'data': [250, 150, 200, 100], 'backgroundColor': ['#2d6cdf', '#1cc88a', '#f6c23e', '#e74a4b']}]}, # Example chart data
+        'recent_applications': [
+            {'name': 'John Doe', 'amount': 10000, 'score': 750, 'date': '2023-10-26', 'status': 'Approved'},
+            {'name': 'Jane Smith', 'amount': 5000, 'score': 680, 'date': '2023-10-25', 'status': 'Pending'},
+        ] # Example data
+    }
+
+    return data
 
 if __name__ == '__main__':
     # Create users.json if it doesn't exist
