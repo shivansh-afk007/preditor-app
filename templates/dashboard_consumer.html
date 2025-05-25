@@ -37,33 +37,24 @@
         <form method="POST" action="{{ url_for('apply') }}">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="emp_length" class="form-label">Employment Length</label>
-                    <select class="form-select" id="emp_length" name="emp_length" required>
-                        <option value="">Select employment length</option>
-                        <option value="< 1 year">Less than 1 year</option>
-                        <option value="1 year">1 year</option>
-                        <option value="2 years">2 years</option>
-                        <option value="3 years">3 years</option>
-                        <option value="4 years">4 years</option>
-                        <option value="5 years">5 years</option>
-                        <option value="6 years">6 years</option>
-                        <option value="7 years">7 years</option>
-                        <option value="8 years">8 years</option>
-                        <option value="9 years">9 years</option>
-                        <option value="10+ years">10+ years</option>
-                    </select>
+                    <label for="emp_length" class="form-label">Employment Length (years)</label>
+                    <input type="number" class="form-control" id="emp_length" name="emp_length" required min="0" max="40" step="1">
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="annual_inc" class="form-label">Annual Income ($)</label>
                     <input type="number" class="form-control" id="annual_inc" name="annual_inc" required min="0" step="1000">
                 </div>
                 <div class="col-md-6 mb-3">
+                    <label for="loan_amnt" class="form-label">Loan Amount ($)</label>
+                    <input type="number" class="form-control" id="loan_amnt" name="loan_amnt" required min="0">
+                </div>
+                <div class="col-md-6 mb-3">
                     <label for="verification_status" class="form-label">Income Verification Status</label>
                     <select class="form-select" id="verification_status" name="verification_status" required>
                         <option value="">Select verification status</option>
-                        <option value="Not Verified">Not Verified</option>
-                        <option value="Verified">Verified</option>
-                        <option value="Source Verified">Source Verified</option>
+                        <option value="0">Not Verified</option>
+                        <option value="1">Verified</option>
+                        <option value="2">Source Verified</option>
                     </select>
                 </div>
                 <div class="col-md-6 mb-3">

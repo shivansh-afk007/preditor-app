@@ -12,64 +12,68 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('apply') }}">
-                        <div class="mb-3">
-                            <label for="emp_length" class="form-label">Employment Length (years)</label>
-                            <input type="number" class="form-control" id="emp_length" name="emp_length" required>
+                        <div class="form-group">
+                            <label for="loan_amnt">Loan Amount Requested ($)</label>
+                            <input type="number" class="form-control" id="loan_amnt" name="loan_amnt" min="0" step="100" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="annual_inc" class="form-label">Annual Income</label>
-                            <input type="number" class="form-control" id="annual_inc" name="annual_inc" required>
+                        <div class="form-group">
+                            <label for="emp_length">Employment Length (years)</label>
+                            <input type="number" class="form-control" id="emp_length" name="emp_length" min="0" max="40" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="verification_status" class="form-label">Verification Status</label>
-                            <select class="form-select" id="verification_status" name="verification_status" required>
-                                <option value="">Select verification status...</option>
-                                <option value="verified">Verified</option>
-                                <option value="not_verified">Not Verified</option>
+                        <div class="form-group">
+                            <label for="annual_inc">Annual Income ($)</label>
+                            <input type="number" class="form-control" id="annual_inc" name="annual_inc" min="0" step="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="verification_status">Verification Status</label>
+                            <select class="form-control" id="verification_status" name="verification_status" required>
+                                <option value="0">Not Verified</option>
+                                <option value="1">Verified</option>
+                                <option value="2">Source Verified</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="delinq_2yrs" class="form-label">Delinquencies in Last 2 Years</label>
-                            <input type="number" class="form-control" id="delinq_2yrs" name="delinq_2yrs" required>
+                        <div class="form-group">
+                            <label for="delinq_2yrs">Number of Delinquencies in Last 2 Years</label>
+                            <input type="number" class="form-control" id="delinq_2yrs" name="delinq_2yrs" min="0" max="10" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="pub_rec" class="form-label">Public Records</label>
-                            <input type="number" class="form-control" id="pub_rec" name="pub_rec" required>
+                        <div class="form-group">
+                            <label for="pub_rec">Number of Public Records</label>
+                            <input type="number" class="form-control" id="pub_rec" name="pub_rec" min="0" max="10" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="revol_util" class="form-label">Revolving Utilization</label>
-                            <input type="number" class="form-control" id="revol_util" name="revol_util" required>
+                        <div class="form-group">
+                            <label for="revol_util">Revolving Utilization (%)</label>
+                            <input type="number" class="form-control" id="revol_util" name="revol_util" min="0" max="100" step="0.1" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="home_ownership" class="form-label">Home Ownership</label>
-                            <select class="form-select" id="home_ownership" name="home_ownership" required>
-                                <option value="">Select home ownership...</option>
-                                <option value="own">Own</option>
-                                <option value="rent">Rent</option>
-                                <option value="mortgage">Mortgage</option>
+                        <div class="form-group">
+                            <label for="home_ownership">Home Ownership</label>
+                            <select class="form-control" id="home_ownership" name="home_ownership" required>
+                                <option value="RENT">Rent</option>
+                                <option value="OWN">Own</option>
+                                <option value="MORTGAGE">Mortgage</option>
+                                <option value="OTHER">Other</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="mort_acc" class="form-label">Mortgage Accounts</label>
-                            <input type="number" class="form-control" id="mort_acc" name="mort_acc" required>
+                        <div class="form-group">
+                            <label for="mort_acc">Number of Mortgage Accounts</label>
+                            <input type="number" class="form-control" id="mort_acc" name="mort_acc" min="0" max="10" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="dti" class="form-label">Debt-to-Income Ratio</label>
-                            <input type="number" class="form-control" id="dti" name="dti" required>
+                        <div class="form-group">
+                            <label for="dti">Debt to Income Ratio (%)</label>
+                            <input type="number" class="form-control" id="dti" name="dti" min="0" max="100" step="0.1" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="open_acc" class="form-label">Open Accounts</label>
-                            <input type="number" class="form-control" id="open_acc" name="open_acc" required>
+                        <div class="form-group">
+                            <label for="open_acc">Number of Open Accounts</label>
+                            <input type="number" class="form-control" id="open_acc" name="open_acc" min="0" max="50" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="total_acc" class="form-label">Total Accounts</label>
-                            <input type="number" class="form-control" id="total_acc" name="total_acc" required>
+                        <div class="form-group">
+                            <label for="total_acc">Total Number of Accounts</label>
+                            <input type="number" class="form-control" id="total_acc" name="total_acc" min="0" max="100" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="inq_last_6mths" class="form-label">Inquiries in Last 6 Months</label>
-                            <input type="number" class="form-control" id="inq_last_6mths" name="inq_last_6mths" required>
+                        <div class="form-group">
+                            <label for="inq_last_6mths">Number of Inquiries in Last 6 Months</label>
+                            <input type="number" class="form-control" id="inq_last_6mths" name="inq_last_6mths" min="0" max="10" required>
                         </div>
-                        <div class="d-grid gap-2">
+                        <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">Submit Application</button>
                         </div>
                     </form>

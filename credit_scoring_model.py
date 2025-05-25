@@ -5,16 +5,17 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import RandomForestClassifier
+import xgboost as xgb
 import pickle
 import os
+from xgboost import XGBClassifier
 
 class CreditScoringModel:
     def __init__(self):
         self.model = None
         self.preprocessor = None
         self.feature_names = None
-        self.model_path = 'models/credit_scoring_model.pkl'
+        self.model_path = 'xgboost.pkl'
         
     def create_sample_data(self, n_samples=5000):
         """Create sample data for training"""
@@ -33,7 +34,8 @@ class CreditScoringModel:
             'dti': np.random.uniform(0, 30, n_samples),
             'open_acc': np.random.randint(1, 20, n_samples),
             'total_acc': np.random.randint(1, 50, n_samples),
-            'inq_last_6mths': np.random.choice([0, 1, 2, 3, 4], n_samples)
+            'inq_last_6mths': np.random.choice([0, 1, 2, 3, 4], n_samples),
+            'loan_amount': np.random.uniform(1000, 50000, n_samples)
         }
         
         df = pd.DataFrame(data)
@@ -59,10 +61,19 @@ class CreditScoringModel:
         
         # Select features
         selected_features = [
-            'emp_length', 'annual_inc', 'verification_status',
-            'delinq_2yrs', 'pub_rec', 'revol_util',
-            'home_ownership', 'mort_acc',
-            'dti', 'open_acc', 'total_acc', 'inq_last_6mths'
+            'loan_amnt',
+            'emp_length',
+            'annual_inc',
+            'verification_status',
+            'delinq_2yrs',
+            'pub_rec',
+            'revol_util',
+            'home_ownership',
+            'mort_acc',
+            'dti',
+            'open_acc',
+            'total_acc',
+            'inq_last_6mths'
         ]
         
         # Filter features that exist in the dataset
@@ -71,21 +82,11 @@ class CreditScoringModel:
         
         # Handle employment length
         if 'emp_length' in X.columns:
-            emp_length_map = {
-                '< 1 year': 0, '1 year': 1, '2 years': 2, '3 years': 3,
-                '4 years': 4, '5 years': 5, '6 years': 6, '7 years': 7,
-                '8 years': 8, '9 years': 9, '10+ years': 10
-            }
-            X['emp_length'] = X['emp_length'].map(lambda x: emp_length_map.get(x, np.nan))
+            X['emp_length'] = X['emp_length'].astype(int)
         
         # Handle verification status
         if 'verification_status' in X.columns:
-            verification_map = {
-                'Not Verified': 0,
-                'Verified': 1,
-                'Source Verified': 2
-            }
-            X['verification_status'] = X['verification_status'].map(verification_map)
+            X['verification_status'] = X['verification_status'].astype(int)
         
         return X, y
 
@@ -118,7 +119,12 @@ class CreditScoringModel:
         print("Training credit scoring model...")
         
         # Create sample data
-        df = self.create_sample_data()
+        try:
+            df = pd.read_csv('dummy_credit_data.csv')
+            print("Loaded data from dummy_credit_data.csv")
+        except FileNotFoundError:
+            print("dummy_credit_data.csv not found. Generating sample data instead.")
+            df = self.create_sample_data()
         
         # Preprocess data
         X, y = self.preprocess_data(df)
@@ -134,7 +140,7 @@ class CreditScoringModel:
         # Create model pipeline
         self.model = Pipeline(steps=[
             ('preprocessor', self.preprocessor),
-            ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
+            ('classifier', xgb.XGBClassifier(n_estimators=100, random_state=42))
         ])
         
         # Train model
@@ -172,9 +178,32 @@ class CreditScoringModel:
         with open(self.model_path, 'rb') as f:
             model_data = pickle.load(f)
         
-        self.model = model_data['pipeline']
-        self.feature_names = model_data['feature_names']
+        # Handle both pipeline and direct model cases
+        if isinstance(model_data, dict) and 'pipeline' in model_data:
+            self.model = model_data['pipeline']
+        else:
+            # If it's just the model, create a pipeline
+            self.model = Pipeline(steps=[
+                ('preprocessor', self.preprocessor),
+                ('classifier', model_data)
+            ])
         
+        # Force use of only the 13 core features
+        self.feature_names = [
+            'loan_amnt',
+            'emp_length',
+            'annual_inc',
+            'verification_status',
+            'delinq_2yrs',
+            'pub_rec',
+            'revol_util',
+            'home_ownership',
+            'mort_acc',
+            'dti',
+            'open_acc',
+            'total_acc',
+            'inq_last_6mths'
+        ]
         return self.model
 
     def predict_credit_score(self, input_data):
@@ -188,89 +217,62 @@ class CreditScoringModel:
         else:
             input_df = input_data.copy()
         
-        # Check for required features
-        missing_features = [f for f in self.feature_names if f not in input_df.columns]
+        # Ensure all required features are present
+        required_features = [
+            'loan_amnt', 'emp_length', 'annual_inc', 'verification_status',
+            'delinq_2yrs', 'pub_rec', 'revol_util', 'home_ownership',
+            'mort_acc', 'dti', 'open_acc', 'total_acc', 'inq_last_6mths'
+        ]
+        
+        # Check for missing features
+        missing_features = [f for f in required_features if f not in input_df.columns]
         if missing_features:
             raise ValueError(f"Missing required features: {missing_features}")
         
-        # Select only the required features in the correct order
-        input_df = input_df[self.feature_names]
+        # Select only the required features
+        input_df = input_df[required_features]
         
-        # Make prediction
-        default_probability = float(self.model.predict_proba(input_df)[0, 1])  # Convert to float
+        # Make prediction using the pipeline
+        default_probability = float(self.model.predict_proba(input_df)[0, 1])
         
         # Calculate credit score (inverse of default probability)
-        # Scale to 0-1000 range
-        credit_score = int(1000 - (default_probability * 1000)) # Scale to 0-1000
-        credit_score = max(0, min(credit_score, 1000)) # Ensure score is within 0-1000
+        credit_score = int(1000 - (default_probability * 1000))
+        credit_score = max(0, min(credit_score, 1000))
         
-        # Determine credit grade based on 0-1000 scale (adjusting ranges)
-        grade_ranges = {
-            'A+': (950, 1000),
-            'A': (900, 949),
-            'A-': (850, 899),
-            'B+': (800, 849),
-            'B': (750, 799),
-            'B-': (700, 749),
-            'C+': (650, 699),
-            'C': (600, 649),
-            'C-': (550, 599),
-            'D+': (500, 549),
-            'D': (450, 499),
-            'D-': (400, 449),
-            'E+': (350, 399),
-            'E': (300, 349),
-            'E-': (250, 299),
-            'F': (0, 249)
+        # Get grade
+        credit_grade = self.grade_from_score(credit_score)
+        
+        # Determine recommendation and rate range
+        if credit_score >= 700:
+            recommendation = "Strong application. Recommend approval with competitive rates."
+            rate_range = "5.0% - 7.5%"
+        elif credit_score >= 600:
+            recommendation = "Moderate risk. Consider approval with standard rates."
+            rate_range = "7.5% - 12.0%"
+        else:
+            recommendation = "High risk. Consider rejection or high-risk rates."
+            rate_range = "12.0% - 18.0%"
+        
+        # Calculate breakdown scores
+        breakdown = {
+            'income_stability': float(input_df['emp_length'].iloc[0]) / 10,
+            'payment_consistency': 1 - (float(input_df['delinq_2yrs'].iloc[0]) / 5),
+            'asset_profile': float(input_df['mort_acc'].iloc[0]) / 5,
+            'behavioral_factors': 1 - (float(input_df['inq_last_6mths'].iloc[0]) / 5)
         }
         
-        credit_grade = 'F'
-        for grade, (min_score, max_score) in grade_ranges.items():
-            if min_score <= credit_score <= max_score:
-                credit_grade = grade
-                break
+        # Ensure all values are within 0-1 range
+        for key in breakdown:
+            breakdown[key] = max(0, min(1, breakdown[key]))
         
-        # Determine loan approval recommendation (adjusting score thresholds)
-        if credit_score >= 700:  # Grade B- or better
-            recommendation = "Approved"
-            # Adjust rate range calculation for 1000 scale
-            rate_range = f"{5 + (1000 - credit_score) / 60:.2f}% - {6 + (1000 - credit_score) / 50:.2f}%"
-        elif credit_score >= 550:  # Grade C- to C+
-            recommendation = "Conditionally Approved"
-            # Adjust rate range calculation for 1000 scale
-            rate_range = f"{8 + (700 - credit_score) / 30:.2f}% - {10 + (700 - credit_score) / 20:.2f}%"
-        else:  # Grade D+ or lower
-            recommendation = "Denied"
-            rate_range = "N/A"
-        
-        # Create component scores (adjusting calculation for 1000 scale)
-        component_scores = {
-            'income_stability': int(credit_score * (0.9 + np.random.uniform(-0.1, 0.1)) * 1000 / 850), # Scale to 1000
-            'payment_consistency': int(credit_score * (0.85 + np.random.uniform(-0.15, 0.15)) * 1000 / 850), # Scale to 1000
-            'asset_profile': int(credit_score * (0.95 + np.random.uniform(-0.2, 0.1)) * 1000 / 850), # Scale to 1000
-            'behavioral_factors': int(credit_score * (0.9 + np.random.uniform(-0.1, 0.1)) * 1000 / 850) # Scale to 1000
-        }
-        
-        # Ensure component scores are within 0-1000
-        for key in component_scores:
-            component_scores[key] = max(0, min(component_scores[key], 1000))
-        
-        # Format results
-        results = {
-            'score': credit_score,
-            'grade': credit_grade,
+        return {
+            'credit_score': credit_score,
+            'credit_grade': credit_grade,
             'default_probability': default_probability,
             'recommendation': recommendation,
             'rate_range': rate_range,
-            'breakdown': {
-                'income_stability': self.grade_from_score(component_scores['income_stability']),
-                'payment_consistency': self.grade_from_score(component_scores['payment_consistency']),
-                'asset_profile': self.grade_from_score(component_scores['asset_profile']),
-                'behavioral_factors': self.grade_from_score(component_scores['behavioral_factors'])
-            }
+            'breakdown': breakdown
         }
-        
-        return results
 
     @staticmethod
     def grade_from_score(score):
@@ -306,4 +308,23 @@ class CreditScoringModel:
         elif score >= 250:
             return "E-"
         else:
-            return "F" 
+            return "F"
+
+    def train(self, X, y):
+        """Train the model on the provided data."""
+        # Build preprocessing pipeline
+        self.preprocessor = self.build_preprocessing_pipeline(X)
+        
+        # Fit preprocessor
+        X_processed = self.preprocessor.fit_transform(X)
+        
+        # Train XGBoost model
+        self.model = XGBClassifier(
+            n_estimators=100,
+            learning_rate=0.1,
+            max_depth=5,
+            random_state=42
+        )
+        self.model.fit(X_processed, y)
+        
+        return self.model 

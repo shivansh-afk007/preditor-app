@@ -108,6 +108,7 @@
                             <th>Risk Score</th>
                             <th>Submission Date</th>
                             <th>Recommendation</th>
+                            <th>Loan Amount</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -117,6 +118,7 @@
                             <td>{{ app.score }}</td>
                             <td>{{ app.created_at.strftime('%Y-%m-%d') }}</td>
                             <td>{{ app.recommendation }}</td>
+                            <td>${{ "%.2f"|format(app.loan_amnt) if app.loan_amnt is not none else 'N/A' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
