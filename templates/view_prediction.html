@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4" style="font-size: 2.2rem; color: #1a365d;">Credit Assessment for {{ customer.name }}</h2>
+            
+            <!-- Customer Information -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header" style="background-color: #1a365d; color: white;">
+                    <h3 class="mb-0" style="font-size: 1.5rem;">Customer Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Name:</strong> {{ customer.name }}</p>
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Email:</strong> {{ customer.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Phone:</strong> {{ customer.phone }}</p>
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Application Date:</strong> {{ customer.application_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Assessment -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header" style="background-color: #1a365d; color: white;">
+                    <h3 class="mb-0" style="font-size: 1.5rem;">Credit Assessment</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center mb-4">
+                                <canvas id="gauge" width="500" height="300"></canvas>
+                                <h4 class="mt-3" style="font-size: 1.8rem; color: #1a365d;">
+                                    Score: <span id="score">{{ prediction.score }}</span>/1000
+                                </h4>
+                                <h5 class="mt-2" style="font-size: 1.4rem; color: #1a365d;">
+                                    Grade: <span id="grade">{{ prediction.grade }}</span>
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mt-4">
+                                <h4 style="font-size: 1.4rem; color: #1a365d;">Suggested Interest Rate Range</h4>
+                                <div class="alert" style="background-color: #f8fafc; border: 1px solid #1a365d; color: #1a365d; font-size: 1.2rem;">
+                                    {% if prediction.score >= 800 %}
+                                        <strong>3.5% - 4.5%</strong> (Excellent)
+                                    {% elif prediction.score >= 700 %}
+                                        <strong>4.5% - 6.5%</strong> (Good)
+                                    {% elif prediction.score >= 600 %}
+                                        <strong>6.5% - 8.5%</strong> (Fair)
+                                    {% elif prediction.score >= 500 %}
+                                        <strong>8.5% - 12.5%</strong> (Poor)
+                                    {% else %}
+                                        <strong>12.5% - 15.5%</strong> (Very Poor)
+                                    {% endif %}
+                                </div>
+                                <p class="mt-3" style="font-size: 1.1rem;">
+                                    <strong>Default Probability:</strong> 
+                                    <span style="background-color: #1a365d; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">
+                                        {{ "%.1f"|format(prediction.default_probability * 100) }}%
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Contributing Factors -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header" style="background-color: #1a365d; color: white;">
+                    <h3 class="mb-0" style="font-size: 1.5rem;">Key Contributing Factors</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Income Stability <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.income_stability }}%</span></h5>
+                            </div>
+                            <div class="mb-3">
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Payment Consistency <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.payment_consistency }}%</span></h5>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Asset Profile <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.asset_profile }}%</span></h5>
+                            </div>
+                            <div class="mb-3">
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Behavioral Factors <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.behavioral_factors }}%</span></h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How to Improve Credit Score -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header" style="background-color: #1a365d; color: white;">
+                    <h3 class="mb-0" style="font-size: 1.5rem;">How to Improve Credit Score</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-group" style="font-size: 1.1rem;">
+                                <li class="list-group-item" style="border-color: #e2e8f0;">
+                                    <i class="fas fa-check-circle me-2" style="color: #1a365d;"></i>
+                                    Maintain consistent income and employment
+                                </li>
+                                <li class="list-group-item" style="border-color: #e2e8f0;">
+                                    <i class="fas fa-check-circle me-2" style="color: #1a365d;"></i>
+                                    Make all payments on time
+                                </li>
+                                <li class="list-group-item" style="border-color: #e2e8f0;">
+                                    <i class="fas fa-check-circle me-2" style="color: #1a365d;"></i>
+                                    Keep credit utilization below 30%
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-group" style="font-size: 1.1rem;">
+                                <li class="list-group-item" style="border-color: #e2e8f0;">
+                                    <i class="fas fa-check-circle me-2" style="color: #1a365d;"></i>
+                                    Build a diverse credit mix
+                                </li>
+                                <li class="list-group-item" style="border-color: #e2e8f0;">
+                                    <i class="fas fa-check-circle me-2" style="color: #1a365d;"></i>
+                                    Maintain a stable address history
+                                </li>
+                                <li class="list-group-item" style="border-color: #e2e8f0;">
+                                    <i class="fas fa-check-circle me-2" style="color: #1a365d;"></i>
+                                    Regularly monitor your credit report
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Assessment -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header" style="background-color: #1a365d; color: white;">
+                    <h3 class="mb-0" style="font-size: 1.5rem;">Risk Assessment</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert" style="background-color: #f8fafc; border: 1px solid #1a365d; color: #1a365d; font-size: 1.2rem;">
+                        <h4 class="alert-heading">Default Risk Analysis</h4>
+                        <p class="mb-0">
+                            Based on our analysis, this customer has a 
+                            <strong>{{ "%.1f"|format(prediction.default_probability * 100) }}%</strong> 
+                            probability of default.
+                            {% if prediction.default_probability < 0.3 %}
+                                This indicates a very low risk profile.
+                            {% elif prediction.default_probability < 0.5 %}
+                                This indicates a moderate risk profile.
+                            {% else %}
+                                This indicates a high risk profile.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var score = {{ prediction.score }};
+    var grade = "{{ prediction.grade }}";
+
+    var config = {
+        angle: 0.15,
+        lineWidth: 0.44,
+        radiusScale: 1,
+        pointer: {
+            length: 0.6,
+            strokeWidth: 0.035,
+            color: '#000000'
+        },
+        limitMax: false,
+        limitMin: false,
+        strokeColor: '#E0E0E0',
+        generateGradient: true,
+        highDpiSupport: true,
+        renderTicks: {
+            divisions: 5,
+            divWidth: 1.1,
+            divLength: 0.7,
+            divColor: '#333333',
+            subDivisions: 3,
+            subLength: 0.5,
+            subWidth: 0.6,
+            subColor: '#666666'
+        },
+        staticLabels: {
+            font: "14px sans-serif",
+            labels: [0, 200, 400, 600, 800, 1000],
+            color: "#000000",
+            fractionDigits: 0
+        },
+        staticZones: [
+            {strokeStyle: "#a9d08e", min: 0, max: 300},
+            {strokeStyle: "#ffc000", min: 300, max: 600},
+            {strokeStyle: "#f4b084", min: 600, max: 1000}
+        ]
+    };
+
+    var target = document.getElementById('gauge');
+    if (target) {
+        var gauge = new Gauge(target).setOptions(config);
+        gauge.maxValue = 1000;
+        gauge.setMinValue(0);
+        gauge.animationSpeed = 32;
+        gauge.set(score);
+
+        // Update score and grade display
+        document.getElementById('score').textContent = score;
+        document.getElementById('grade').textContent = grade;
+    } else {
+        console.error('Gauge element not found');
+    }
+});
+</script>
+{% endblock %} 

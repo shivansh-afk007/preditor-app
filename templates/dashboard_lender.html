@@ -97,52 +97,6 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Risk Distribution</h5>
-                <div class="chart-container">
-                    <canvas id="riskDistributionChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Application Status Overview</h5>
-                <div class="chart-container">
-                    <canvas id="applicationStatusChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Loan Performance</h5>
-                <div class="chart-container">
-                    <canvas id="loanPerformanceChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Geographic Distribution</h5>
-                <div class="chart-container">
-                    <canvas id="geographicDistributionChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
@@ -151,22 +105,18 @@
                     <thead>
                         <tr>
                             <th>Applicant Name</th>
-                            <th>Loan Amount</th>
                             <th>Risk Score</th>
                             <th>Submission Date</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                            <th>Recommendation</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for app in data.recent_applications %}
                         <tr>
-                            <td>{{ app.name }}</td>
-                            <td>${{ app.amount }}</td>
+                            <td>{{ app.user.username if app.user else 'Unknown' }}</td>
                             <td>{{ app.score }}</td>
-                            <td>{{ app.date }}</td>
-                            <td>{{ app.status }}</td>
-                            <td><a href="#">View Application</a></td>
+                            <td>{{ app.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ app.recommendation }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -175,7 +125,6 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
