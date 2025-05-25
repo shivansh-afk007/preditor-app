@@ -75,6 +75,10 @@ class Prediction(db.Model):
     open_acc = db.Column(db.Integer, nullable=False)
     total_acc = db.Column(db.Integer, nullable=False)
     inq_last_6mths = db.Column(db.Integer, nullable=False)
+    breakdown = db.Column(db.JSON, nullable=True)
+
+    def __repr__(self):
+        return f"Prediction(id={self.id}, user_id={self.user_id}, credit_score={self.credit_score}, credit_grade={self.credit_grade}, default_probability={self.default_probability}, recommendation={self.recommendation}, rate_range={self.rate_range})"
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -399,6 +403,7 @@ def apply():
                 default_probability=prediction_result['default_probability'],
                 recommendation=prediction_result['recommendation'],
                 rate_range=prediction_result['rate_range'],
+                breakdown=prediction_result['breakdown'],
                 **input_data
             )
             

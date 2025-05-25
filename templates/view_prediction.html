@@ -73,6 +73,7 @@
             </div>
 
             <!-- Key Contributing Factors -->
+            {% if prediction.breakdown %}
             <div class="card mb-4 shadow-sm">
                 <div class="card-header" style="background-color: #1a365d; color: white;">
                     <h3 class="mb-0" style="font-size: 1.5rem;">Key Contributing Factors</h3>
@@ -81,23 +82,24 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Income Stability <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.income_stability }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Income Stability <span class="badge bg-primary">{{ (prediction.breakdown.income_stability * 100) | round(1) }}%</span></h5>
                             </div>
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Payment Consistency <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.payment_consistency }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Payment Consistency <span class="badge bg-primary">{{ (prediction.breakdown.payment_consistency * 100) | round(1) }}%</span></h5>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Asset Profile <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.asset_profile }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Asset Profile <span class="badge bg-primary">{{ (prediction.breakdown.asset_profile * 100) | round(1) }}%</span></h5>
                             </div>
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Behavioral Factors <span class="badge bg-primary" style="background-color: #1a365d !important;">{{ prediction.behavioral_factors }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Behavioral Factors <span class="badge bg-primary">{{ (prediction.breakdown.behavioral_factors * 100) | round(1) }}%</span></h5>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <!-- How to Improve Credit Score -->
             <div class="card mb-4 shadow-sm">
@@ -163,19 +165,6 @@
                             {% endif %}
                         </p>
                     </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="annual_income" class="form-label">Annual Income ($)</label>
-                    <input type="number" class="form-control" id="annual_income" name="annual_income" required>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="loan_amount" class="form-label">Loan Amount ($)</label>
-                    <input type="number" class="form-control" id="loan_amount" name="loan_amount" required>
                 </div>
             </div>
         </div>
