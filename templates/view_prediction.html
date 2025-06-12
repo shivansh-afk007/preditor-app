@@ -4,7 +4,7 @@
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-12">
-            <h2 class="mb-4" style="font-size: 2.2rem; color: #1a365d;">Credit Assessment for {{ customer.name }}</h2>
+            <h4 class="mb-4" style="font-size: 2.2rem; color: #1a365d;">Credit Assessment for {{ user.name }}</h4>
             
             <!-- Customer Information -->
             <div class="card mb-4 shadow-sm">
@@ -14,13 +14,13 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Name:</strong> {{ customer.name }}</p>
-                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Email:</strong> {{ customer.email }}</p>
-                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Loan Amount:</strong> ${{ "%.2f"|format(prediction.loan_amnt) }}</p>
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Name:</strong> {{ user.name }}</p>
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Email:</strong> {{ user.email }}</p>
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Loan Amount:</strong> ${{ "%.2f"|format(prediction.loan_amount) }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Phone:</strong> {{ customer.phone }}</p>
-                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Application Date:</strong> {{ customer.application_date.strftime('%Y-%m-%d') }}</p>
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Phone:</strong> {{ user.phone }}</p>
+                            <p class="mb-2" style="font-size: 1.1rem;"><strong>Application Date:</strong> {{ user.application_date.strftime('%Y-%m-%d') if user.application_date else 'N/A' }}</p>
                         </div>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                                     Score: <span id="score">{{ prediction.credit_score }}</span>/1000
                                 </h4>
                                 <h5 class="mt-2" style="font-size: 1.4rem; color: #1a365d;">
-                                    Grade: <span id="grade">{{ prediction.credit_grade }}</span>
+                                    Grade: <span id="grade">{{ prediction.grade }}</span>
                                 </h5>
                             </div>
                         </div>
@@ -48,22 +48,12 @@
                             <div class="mt-4">
                                 <h4 style="font-size: 1.4rem; color: #1a365d;">Suggested Interest Rate Range</h4>
                                 <div class="alert" style="background-color: #f8fafc; border: 1px solid #1a365d; color: #1a365d; font-size: 1.2rem;">
-                                    {% if prediction.credit_score >= 800 %}
-                                        <strong>3.5% - 4.5%</strong> (Excellent)
-                                    {% elif prediction.credit_score >= 700 %}
-                                        <strong>4.5% - 6.5%</strong> (Good)
-                                    {% elif prediction.credit_score >= 600 %}
-                                        <strong>6.5% - 8.5%</strong> (Fair)
-                                    {% elif prediction.credit_score >= 500 %}
-                                        <strong>8.5% - 12.5%</strong> (Poor)
-                                    {% else %}
-                                        <strong>12.5% - 15.5%</strong> (Very Poor)
-                                    {% endif %}
+                                    {{ prediction.rate_range }}
                                 </div>
                                 <p class="mt-3" style="font-size: 1.1rem;">
-                                    <strong>Default Probability:</strong> 
+                                    <strong>Recommendation:</strong> 
                                     <span style="background-color: #1a365d; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">
-                                        {{ "%.1f"|format(prediction.default_probability * 100) }}%
+                                        {{ prediction.recommendation }}
                                     </span>
                                 </p>
                             </div>
@@ -73,7 +63,7 @@
             </div>
 
             <!-- Key Contributing Factors -->
-            {% if prediction.breakdown %}
+            {% if prediction.category_scores %}
             <div class="card mb-4 shadow-sm">
                 <div class="card-header" style="background-color: #1a365d; color: white;">
                     <h3 class="mb-0" style="font-size: 1.5rem;">Key Contributing Factors</h3>
@@ -82,18 +72,18 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Income Stability <span class="badge bg-primary">{{ (prediction.breakdown.income_stability * 100) | round(1) }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Income Stability <span class="badge bg-primary">{{ prediction.category_scores.income_stability }}%</span></h5>
                             </div>
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Payment Consistency <span class="badge bg-primary">{{ (prediction.breakdown.payment_consistency * 100) | round(1) }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Payment Consistency <span class="badge bg-primary">{{ prediction.category_scores.payment_consistency }}%</span></h5>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Asset Profile <span class="badge bg-primary">{{ (prediction.breakdown.asset_profile * 100) | round(1) }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Asset Value <span class="badge bg-primary">{{ prediction.category_scores.asset_value }}%</span></h5>
                             </div>
                             <div class="mb-3">
-                                <h5 style="font-size: 1.2rem; color: #1a365d;">Behavioral Factors <span class="badge bg-primary">{{ (prediction.breakdown.behavioral_factors * 100) | round(1) }}%</span></h5>
+                                <h5 style="font-size: 1.2rem; color: #1a365d;">Behavioral Factors <span class="badge bg-primary">{{ prediction.category_scores.behavioral_factors }}%</span></h5>
                             </div>
                         </div>
                     </div>
@@ -153,16 +143,10 @@
                     <div class="alert" style="background-color: #f8fafc; border: 1px solid #1a365d; color: #1a365d; font-size: 1.2rem;">
                         <h4 class="alert-heading">Default Risk Analysis</h4>
                         <p class="mb-0">
-                            Based on our analysis, this customer has a 
-                            <strong>{{ "%.1f"|format(prediction.default_probability * 100) }}%</strong> 
-                            probability of default.
-                            {% if prediction.default_probability < 0.3 %}
-                                This indicates a very low risk profile.
-                            {% elif prediction.default_probability < 0.5 %}
-                                This indicates a moderate risk profile.
-                            {% else %}
-                                This indicates a high risk profile.
-                            {% endif %}
+                            Based on our analysis, the recommendation is: 
+                            <strong>{{ prediction.recommendation }}</strong> 
+                            with a rate range of: 
+                            <strong>{{ prediction.rate_range }}</strong>.
                         </p>
                     </div>
                 </div>
@@ -171,10 +155,14 @@
     </div>
 </div>
 
+<script type="application/json" id="predictionData">{{ prediction | tojson | safe }}</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var score = {{ prediction.credit_score }};
-    var grade = "{{ prediction.credit_grade }}";
+    const predictionData = JSON.parse(document.getElementById('predictionData').textContent);
+
+    var score = predictionData.credit_score;
+    var grade = predictionData.grade;
 
     var config = {
         angle: 0.15,

@@ -1,22 +1,65 @@
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-import xgboost as xgb
 import pickle
-import os
-from xgboost import XGBClassifier
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 class CreditScoringModel:
-    def __init__(self):
+    def __init__(self, model_path='models/alternative_credit_scorer.pkl'):
+        self.model_path = model_path
         self.model = None
-        self.preprocessor = None
-        self.feature_names = None
-        self.model_path = 'xgboost.pkl'
+        self.load_model()
         
+    def load_model(self):
+        try:
+            with open(self.model_path, 'rb') as f:
+                self.model = pickle.load(f)
+        except Exception as e:
+            print(f"Error loading model: {str(e)}")
+            raise
+            
+    def predict_credit_score(self, input_data):
+        if not self.model:
+            raise ValueError("Model not loaded")
+            
+        # Convert input data to DataFrame if it's a dictionary
+        if isinstance(input_data, dict):
+            input_data = pd.DataFrame([input_data])
+            
+        # Ensure all required features are present
+        required_features = [
+            'loan_amount', 'employment_length', 'annual_income', 'verification_status',
+            'home_ownership', 'delinq_2yrs', 'pub_rec', 'revol_util', 'dti',
+            'gig_platforms_count', 'gig_platform_rating', 'gig_completion_rate'
+        ]
+        
+        # Check for missing features
+        missing_features = [f for f in required_features if f not in input_data.columns]
+        if missing_features:
+            raise ValueError(f"Missing required features: {', '.join(missing_features)}")
+            
+        # Select only the required features
+        input_data = input_data[required_features]
+        
+        # Convert home_ownership to string type for proper encoding
+        input_data['home_ownership'] = input_data['home_ownership'].astype(str)
+        
+        # Get prediction using the alternative credit scorer
+        prediction_result = self.model.score_profile(input_data.iloc[0])
+        
+        return {
+            'credit_score': prediction_result['final_score'],
+            'credit_grade': prediction_result['interpretation']['grade'],
+            'default_probability': 1 - (prediction_result['final_score'] / 1000),  # Convert score to probability
+            'recommendation': prediction_result['interpretation']['recommendation'],
+            'rate_range': prediction_result['interpretation']['rate_range'],
+            'breakdown': {
+                'income_stability': prediction_result['category_scores']['income_stability'],
+                'payment_consistency': prediction_result['category_scores']['payment_consistency'],
+                'asset_value': prediction_result['category_scores']['asset_value'],
+                'behavioral_factors': prediction_result['category_scores']['behavioral_factors']
+            }
+        }
+
     def create_sample_data(self, n_samples=5000):
         """Create sample data for training"""
         np.random.seed(42)
@@ -169,146 +212,6 @@ class CreditScoringModel:
             pickle.dump(model_data, f)
         
         print(f"Model saved to {self.model_path}")
-
-    def load_model(self):
-        """Load the trained model"""
-        if not os.path.exists(self.model_path):
-            raise FileNotFoundError(f"Model file not found at {self.model_path}")
-        
-        with open(self.model_path, 'rb') as f:
-            model_data = pickle.load(f)
-        
-        # Handle both pipeline and direct model cases
-        if isinstance(model_data, dict) and 'pipeline' in model_data:
-            self.model = model_data['pipeline']
-        else:
-            # If it's just the model, create a pipeline
-            self.model = Pipeline(steps=[
-                ('preprocessor', self.preprocessor),
-                ('classifier', model_data)
-            ])
-        
-        # Force use of only the 13 core features
-        self.feature_names = [
-            'loan_amnt',
-            'emp_length',
-            'annual_inc',
-            'verification_status',
-            'delinq_2yrs',
-            'pub_rec',
-            'revol_util',
-            'home_ownership',
-            'mort_acc',
-            'dti',
-            'open_acc',
-            'total_acc',
-            'inq_last_6mths'
-        ]
-        return self.model
-
-    def predict_credit_score(self, input_data):
-        """Predict credit score for new data"""
-        if self.model is None:
-            self.load_model()
-        
-        # Convert input to DataFrame if it's a dictionary
-        if isinstance(input_data, dict):
-            input_df = pd.DataFrame([input_data])
-        else:
-            input_df = input_data.copy()
-        
-        # Ensure all required features are present
-        required_features = [
-            'loan_amnt', 'emp_length', 'annual_inc', 'verification_status',
-            'delinq_2yrs', 'pub_rec', 'revol_util', 'home_ownership',
-            'mort_acc', 'dti', 'open_acc', 'total_acc', 'inq_last_6mths'
-        ]
-        
-        # Check for missing features
-        missing_features = [f for f in required_features if f not in input_df.columns]
-        if missing_features:
-            raise ValueError(f"Missing required features: {missing_features}")
-        
-        # Select only the required features
-        input_df = input_df[required_features]
-        
-        # Make prediction using the pipeline
-        default_probability = float(self.model.predict_proba(input_df)[0, 1])
-        
-        # Calculate credit score (inverse of default probability)
-        credit_score = int(1000 - (default_probability * 1000))
-        credit_score = max(0, min(credit_score, 1000))
-        
-        # Get grade
-        credit_grade = self.grade_from_score(credit_score)
-        
-        # Determine recommendation and rate range
-        if credit_score >= 700:
-            recommendation = "Strong application. Recommend approval with competitive rates."
-            rate_range = "5.0% - 7.5%"
-        elif credit_score >= 600:
-            recommendation = "Moderate risk. Consider approval with standard rates."
-            rate_range = "7.5% - 12.0%"
-        else:
-            recommendation = "High risk. Consider rejection or high-risk rates."
-            rate_range = "12.0% - 18.0%"
-        
-        # Calculate breakdown scores
-        breakdown = {
-            'income_stability': float(input_df['emp_length'].iloc[0]) / 10,
-            'payment_consistency': 1 - (float(input_df['delinq_2yrs'].iloc[0]) / 5),
-            'asset_profile': float(input_df['mort_acc'].iloc[0]) / 5,
-            'behavioral_factors': 1 - (float(input_df['inq_last_6mths'].iloc[0]) / 5)
-        }
-        
-        # Ensure all values are within 0-1 range
-        for key in breakdown:
-            breakdown[key] = max(0, min(1, breakdown[key]))
-        
-        return {
-            'credit_score': credit_score,
-            'credit_grade': credit_grade,
-            'default_probability': default_probability,
-            'recommendation': recommendation,
-            'rate_range': rate_range,
-            'breakdown': breakdown
-        }
-
-    @staticmethod
-    def grade_from_score(score):
-        """Convert numeric score (0-1000) to letter grade"""
-        if score >= 950:
-            return "A+"
-        elif score >= 900:
-            return "A"
-        elif score >= 850:
-            return "A-"
-        elif score >= 800:
-            return "B+"
-        elif score >= 750:
-            return "B"
-        elif score >= 700:
-            return "B-"
-        elif score >= 650:
-            return "C+"
-        elif score >= 600:
-            return "C"
-        elif score >= 550:
-            return "C-"
-        elif score >= 500:
-            return "D+"
-        elif score >= 450:
-            return "D"
-        elif score >= 400:
-            return "D-"
-        elif score >= 350:
-            return "E+"
-        elif score >= 300:
-            return "E"
-        elif score >= 250:
-            return "E-"
-        else:
-            return "F"
 
     def train(self, X, y):
         """Train the model on the provided data."""

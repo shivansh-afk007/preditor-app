@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Consumer Dashboard</h2>
+    
+    {% if latest_prediction %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Latest Credit Score Assessment</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Credit Score: {{ latest_prediction.credit_score }}</h5>
+                    <h5>Grade: {{ latest_prediction.credit_grade }}</h5>
+                    <p><strong>Recommendation:</strong> {{ latest_prediction.recommendation }}</p>
+                    <p><strong>Rate Range:</strong> {{ latest_prediction.rate_range }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Score Breakdown</h5>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ latest_prediction.breakdown.income_stability }}%"
+                             aria-valuenow="{{ latest_prediction.breakdown.income_stability }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            Income Stability: {{ latest_prediction.breakdown.income_stability }}%
+                        </div>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: {{ latest_prediction.breakdown.payment_consistency }}%"
+                             aria-valuenow="{{ latest_prediction.breakdown.payment_consistency }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            Payment Consistency: {{ latest_prediction.breakdown.payment_consistency }}%
+                        </div>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-warning" role="progressbar" 
+                             style="width: {{ latest_prediction.breakdown.asset_value }}%"
+                             aria-valuenow="{{ latest_prediction.breakdown.asset_value }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            Asset Value: {{ latest_prediction.breakdown.asset_value }}%
+                        </div>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-primary" role="progressbar" 
+                             style="width: {{ latest_prediction.breakdown.behavioral_factors }}%"
+                             aria-valuenow="{{ latest_prediction.breakdown.behavioral_factors }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            Behavioral Factors: {{ latest_prediction.breakdown.behavioral_factors }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info mt-4">
+        You haven't applied for a credit score assessment yet. 
+        <a href="{{ url_for('apply') }}" class="alert-link">Apply now</a>
+    </div>
+    {% endif %}
+    
+    {% if predictions %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Previous Assessments</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Score</th>
+                            <th>Grade</th>
+                            <th>Recommendation</th>
+                            <th>Rate Range</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prediction in predictions %}
+                        <tr>
+                            <td>{{ prediction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ prediction.credit_score }}</td>
+                            <td>{{ prediction.credit_grade }}</td>
+                            <td>{{ prediction.recommendation }}</td>
+                            <td>{{ prediction.rate_range }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

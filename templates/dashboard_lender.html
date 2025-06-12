@@ -4,14 +4,14 @@
 
 {% block extra_css %}
 <style>
-    /* Add any specific CSS for lender dashboard here if needed */
     .client-table-container {
-        /* Add styling for the table container if needed */
+        margin-top: 20px;
     }
-     .chart-container {
+    .chart-container {
         position: relative;
         height: 300px;
         width: 100%;
+        margin-bottom: 20px;
     }
     .create-customer-btn {
         float: right;
@@ -36,7 +36,7 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Total Assets Managed</h5>
-                <div class="display-4">${{ data.total_assets }}</div>
+                <div class="display-4">${{ "%.2f"|format(data.total_assets) }}</div>
             </div>
         </div>
     </div>
@@ -44,7 +44,7 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Avg. Risk Score</h5>
-                <div class="display-4">{{ data.avg_risk_score }}</div>
+                <div class="display-4">{{ "%.2f"|format(data.avg_risk_score) }}</div>
             </div>
         </div>
     </div>
@@ -70,7 +70,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for client in data.client_list %}
+                            {% for client in data.consumer_list %}
                             <tr>
                                 <td>{{ client.name }}</td>
                                 <td>{{ client.email }}</td>
@@ -83,7 +83,7 @@
                                 </td>
                             </tr>
                             {% endfor %}
-                            {% if not data.client_list %}
+                            {% if not data.consumer_list %}
                             <tr>
                                 <td colspan="3" class="text-center">No consumer users found. Create a new user above.</td>
                             </tr>
@@ -115,14 +115,65 @@
                         {% for app in data.recent_applications %}
                         <tr>
                             <td>{{ app.user.username if app.user else 'Unknown' }}</td>
-                            <td>{{ app.score }}</td>
-                            <td>{{ app.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ app.credit_score }}</td>
+                            <td>{{ app.timestamp.strftime('%Y-%m-%d') }}</td>
                             <td>{{ app.recommendation }}</td>
-                            <td>${{ "%.2f"|format(app.loan_amnt) if app.loan_amnt is not none else 'N/A' }}</td>
+                            <td>${{ "%.2f"|format(app.loan_amount) if app.loan_amount is not none else 'N/A' }}</td>
                         </tr>
                         {% endfor %}
+                        {% if not data.recent_applications %}
+                        <tr>
+                            <td colspan="5" class="text-center">No recent applications found.</td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Risk Distribution</h5>
+                <div class="chart-container">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Application Status</h5>
+                <div class="chart-container">
+                    <canvas id="applicationStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Loan Performance</h5>
+                <div class="chart-container">
+                    <canvas id="loanPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Geographic Distribution</h5>
+                <div class="chart-container">
+                    <canvas id="geographicDistributionChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -130,6 +181,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="application/json" id="riskDistributionData">{{ data.risk_distribution_data | tojson | safe }}</script>
 <script type="application/json" id="applicationStatusData">{{ data.application_status_data | tojson | safe }}</script>
 <script type="application/json" id="loanPerformanceData">{{ data.loan_performance_data | tojson | safe }}</script>

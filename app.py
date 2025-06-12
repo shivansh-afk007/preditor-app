@@ -1,5 +1,4 @@
 from flask import Flask, render_template, redirect, url_for, request, jsonify, flash, get_flashed_messages
-from flask import Flask, render_template, redirect, url_for, request, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import joblib
 import pandas as pd
@@ -13,85 +12,46 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import numpy as np
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from credit_scoring_model import CreditScoringModel
+from clean_alternative_credit_scoring import AlternativeCreditScorer
+import pickle
+from models import db, User, Prediction # Import db, User, and Prediction from models.py
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///credit_ml.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+db.init_app(app) # Initialize db with the app
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Initialize credit scoring model
-credit_model = CreditScoringModel()
+model_path = 'models/alternative_credit_scorer.pkl'
 
-# User model
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    name = db.Column(db.String(80), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    phone = db.Column(db.String(20))
-    password_hash = db.Column(db.String(128))
-    role = db.Column(db.String(20), nullable=False)  # 'lender' or 'consumer'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    application_date = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # ID of the lender who created this user
-    predictions = db.relationship('Prediction', backref='user', lazy=True)
-    created_consumers = db.relationship('User', backref=db.backref('creator', remote_side=[id]), lazy=True)
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-# Prediction model
-class Prediction(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    credit_score = db.Column(db.Integer, nullable=False)
-    credit_grade = db.Column(db.String(2), nullable=False)
-    default_probability = db.Column(db.Float, nullable=False)
-    recommendation = db.Column(db.String(50), nullable=False)
-    rate_range = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
-    # Input features
-    loan_amnt = db.Column(db.Float, nullable=False)
-    emp_length = db.Column(db.Integer, nullable=False)
-    annual_inc = db.Column(db.Float, nullable=False)
-    verification_status = db.Column(db.Integer, nullable=False)
-    delinq_2yrs = db.Column(db.Integer, nullable=False)
-    pub_rec = db.Column(db.Integer, nullable=False)
-    revol_util = db.Column(db.Float, nullable=False)
-    home_ownership = db.Column(db.String(20), nullable=False)
-    mort_acc = db.Column(db.Integer, nullable=False)
-    dti = db.Column(db.Float, nullable=False)
-    open_acc = db.Column(db.Integer, nullable=False)
-    total_acc = db.Column(db.Integer, nullable=False)
-    inq_last_6mths = db.Column(db.Integer, nullable=False)
-    breakdown = db.Column(db.JSON, nullable=True)
-
-    def __repr__(self):
-        return f"Prediction(id={self.id}, user_id={self.user_id}, credit_score={self.credit_score}, credit_grade={self.credit_grade}, default_probability={self.default_probability}, recommendation={self.recommendation}, rate_range={self.rate_range})"
+# Load the model if it exists, otherwise initialize a new one
+if os.path.exists(model_path):
+    with open(model_path, 'rb') as f:
+        credit_model = pickle.load(f)
+    print("Alternative credit scoring model loaded successfully.")
+else:
+    credit_model = AlternativeCreditScorer()
+    print("Alternative credit scoring model initialized (not loaded from file).")
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Create database tables
+# Create database tables (only if not already created by migrations)
 with app.app_context():
-    db.create_all()
+    db.create_all() # Creating initial database schema
     
     # Train the credit scoring model if it doesn't exist
     if not os.path.exists('models/credit_scoring_model.pkl'):
         print("Training credit scoring model...")
-        credit_model.train_model()
+        # If credit_model has a train_model method, call it here
+        # credit_model.train_model()
         print("Model training completed.")
 
 # --- Jinja2 Filters ---
@@ -117,7 +77,7 @@ def get_consumer_dashboard_data(user_id):
 
     latest_prediction = None
     if user.predictions:
-        latest_prediction = sorted(user.predictions, key=lambda x: x.created_at)[-1]
+        latest_prediction = sorted(user.predictions, key=lambda x: x.timestamp)[-1]
 
     # Initialize Dashboard Data with default values
     dashboard_data = {
@@ -142,9 +102,9 @@ def get_consumer_dashboard_data(user_id):
 
     if latest_prediction:
         dashboard_data['prediction'] = latest_prediction.recommendation
-        dashboard_data['high_risk_probability'] = f"{latest_prediction.default_probability:.2%}"
-        dashboard_data['low_risk_probability'] = f"{(1 - latest_prediction.default_probability):.2%}"
-        dashboard_data['low_risk_probability_numeric'] = 1 - latest_prediction.default_probability
+        dashboard_data['high_risk_probability'] = f"{latest_prediction.credit_score / 1000:.2%}"
+        dashboard_data['low_risk_probability'] = f"{(1 - latest_prediction.credit_score / 1000):.2%}"
+        dashboard_data['low_risk_probability_numeric'] = 1 - (latest_prediction.credit_score / 1000)
         dashboard_data['recommendations'] = [latest_prediction.recommendation]
         
         # Update credit score based on prediction
@@ -261,7 +221,7 @@ def consumer_dashboard():
 @login_required
 def lender_dashboard():
     if current_user.role != 'lender':
-        return redirect(url_for('dashboard_consumer')) # Redirect if not a lender
+        return redirect(url_for('consumer_dashboard')) # Redirect if not a lender
 
     # Get only consumers created by this lender
     consumers = User.query.filter_by(role='consumer', created_by=current_user.id).all()
@@ -269,7 +229,7 @@ def lender_dashboard():
     # Get their latest predictions
     consumer_list = []
     for consumer in consumers:
-        latest_prediction = Prediction.query.filter_by(user_id=consumer.id).order_by(Prediction.created_at.desc()).first()
+        latest_prediction = Prediction.query.filter_by(user_id=consumer.id).order_by(Prediction.timestamp.desc()).first()
         consumer_list.append({
             'id': consumer.id,
             'name': consumer.username,
@@ -279,37 +239,37 @@ def lender_dashboard():
     
     # Get dashboard statistics
     total_clients = len(consumers)
-    total_assets = sum(p.loan_amnt for p in Prediction.query.filter(Prediction.user_id.in_([c.id for c in consumers])).all() if p.loan_amnt is not None)
+    total_assets = sum(p.loan_amount for p in Prediction.query.filter(Prediction.user_id.in_([c.id for c in consumers])).all() if p.loan_amount is not None)
     avg_risk_score = total_assets / total_clients if total_clients > 0 else 0
     
     # Get recent applications for this lender's consumers
     recent_applications = Prediction.query.filter(
         Prediction.user_id.in_([c.id for c in consumers])
-    ).order_by(Prediction.created_at.desc()).limit(5).all()
+    ).order_by(Prediction.timestamp.desc()).limit(5).all()
     
     # Prepare chart data
     risk_distribution_data = {
-        'labels': ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+        'labels': ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
         'datasets': [{
-            'data': [20, 30, 25, 15, 5, 3, 2],
-            'backgroundColor': ['#4CAF50', '#8BC34A', '#FFC107', '#FF9800', '#FF5722', '#F44336', '#D32F2F']
+            'data': [0, 0, 0, 0, 0],
+            'backgroundColor': ['#28a745', '#20c997', '#007bff', '#ffc107', '#dc3545']
         }]
     }
     
     application_status_data = {
-        'labels': ['Approved', 'Conditionally Approved', 'Denied'],
+        'labels': ['Approved', 'Pending', 'Rejected'],
         'datasets': [{
-            'data': [60, 25, 15],
-            'backgroundColor': ['#4CAF50', '#FFC107', '#F44336']
+            'data': [0, 0, 0],
+            'backgroundColor': ['#28a745', '#ffc107', '#dc3545']
         }]
     }
     
     loan_performance_data = {
         'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
         'datasets': [{
-            'label': 'Performance',
-            'data': [65, 70, 75, 72, 78, 80],
-            'borderColor': '#2196F3',
+            'label': 'Loan Amount',
+            'data': [0, 0, 0, 0, 0, 0],
+            'borderColor': '#007bff',
             'fill': False
         }]
     }
@@ -317,100 +277,145 @@ def lender_dashboard():
     geographic_distribution_data = {
         'labels': ['North', 'South', 'East', 'West', 'Central'],
         'datasets': [{
-            'data': [25, 20, 15, 20, 20],
-            'backgroundColor': ['#2196F3', '#4CAF50', '#FFC107', '#FF9800', '#9C27B0']
+            'label': 'Number of Loans',
+            'data': [0, 0, 0, 0, 0],
+            'backgroundColor': '#007bff'
         }]
     }
     
-    return render_template('dashboard_lender.html',
-                         data={
-                             'total_clients': total_clients,
-                             'total_assets': f"{total_assets:,.2f}",
-                             'avg_risk_score': f"{avg_risk_score:.2f}",
-                             'client_list': consumer_list,
-                             'recent_applications': recent_applications,
-                             'risk_distribution_data': risk_distribution_data,
-                             'application_status_data': application_status_data,
-                             'loan_performance_data': loan_performance_data,
-                             'geographic_distribution_data': geographic_distribution_data
-                         })
+    # Prepare dashboard data
+    dashboard_data = {
+        'total_clients': total_clients,
+        'total_assets': total_assets,
+        'avg_risk_score': avg_risk_score,
+        'consumer_list': consumer_list,
+        'recent_applications': recent_applications,
+        'credit_score': 752,  # Default value
+        'credit_score_status': 'Good',  # Default value
+        'earnings': 6320,  # Default value
+        'credit_factors': {
+            'Income': 'N/A',
+            'Cash Flow': 'N/A',
+            'Employment': 'N/A'
+        },
+        'recent_activity': [],
+        'prediction': 'No prediction yet.',
+        'high_risk_probability': 'N/A',
+        'low_risk_probability': 'N/A',
+        'low_risk_probability_numeric': 0.5,
+        'recommendations': ['Submit the form above to get your first prediction!'],
+        'spending_data': {'labels': [], 'data': [], 'backgroundColor': []},
+        'credit_utilization_data': {'labels': [], 'data': [], 'backgroundColor': []},
+        'loan_applications': [],
+        'risk_distribution_data': risk_distribution_data,
+        'application_status_data': application_status_data,
+        'loan_performance_data': loan_performance_data,
+        'geographic_distribution_data': geographic_distribution_data
+    }
+
+    return render_template('dashboard_lender.html', 
+                         data=dashboard_data,
+                         user_role=current_user.role,
+                         is_lender_view=True)
 
 @app.route('/apply', methods=['GET', 'POST'])
 @login_required
 def apply():
     if request.method == 'POST':
-        # List of required fields and their expected types
-        required_fields = {
-            'loan_amnt': float,
-            'emp_length': int,
-            'annual_inc': float,
-            'verification_status': int,
-            'delinq_2yrs': int,
-            'pub_rec': int,
-            'revol_util': float,
-            'home_ownership': str,
-            'mort_acc': int,
-            'dti': float,
-            'open_acc': int,
-            'total_acc': int,
-            'inq_last_6mths': int
-        }
+        # Get all required fields
+        required_fields = [
+            'loan_amount', 'employment_length', 'annual_income', 'verification_status',
+            'gig_platforms_count', 'gig_platform_rating', 'gig_completion_rate',
+            'utility_payments_ontime', 'rent_payments_ontime', 'subscription_payments_ontime',
+            'months_payment_history', 'late_payments_90d', 'delinq_2yrs', 'pub_rec', 'revol_util',
+            'home_ownership', 'bank_balance_avg', 'bank_balance_min', 'investment_assets', 'mort_acc',
+            'dti', 'cashflow_ratio', 'savings_rate', 'digital_footprint_score',
+            'shopping_categories', 'gambling_expenses', 'education_level', 'open_acc'
+        ]
         
         # Check for missing fields
-        missing_fields = []
-        for field, field_type in required_fields.items():
-            if field not in request.form or not request.form.get(field):
-                missing_fields.append(field)
-        
+        missing_fields = [field for field in required_fields if field not in request.form]
         if missing_fields:
             flash(f'Missing required fields: {", ".join(missing_fields)}', 'error')
             return redirect(url_for('apply'))
         
+        # Convert form data to appropriate types
+        data = {
+            'loan_amount': float(request.form['loan_amount']),
+            'employment_length': float(request.form['employment_length']),
+            'annual_income': float(request.form['annual_income']),
+            'verification_status': request.form['verification_status'],
+            'gig_platforms_count': float(request.form['gig_platforms_count']),
+            'gig_platform_rating': float(request.form['gig_platform_rating']),
+            'gig_completion_rate': float(request.form['gig_completion_rate']),
+            'utility_payments_ontime': float(request.form['utility_payments_ontime']),
+            'rent_payments_ontime': float(request.form['rent_payments_ontime']),
+            'subscription_payments_ontime': float(request.form['subscription_payments_ontime']),
+            'months_payment_history': float(request.form['months_payment_history']),
+            'late_payments_90d': float(request.form['late_payments_90d']),
+            'delinq_2yrs': float(request.form['delinq_2yrs']),
+            'pub_rec': float(request.form['pub_rec']),
+            'revol_util': float(request.form['revol_util']),
+            'home_ownership': request.form['home_ownership'],
+            'bank_balance_avg': float(request.form['bank_balance_avg']),
+            'bank_balance_min': float(request.form['bank_balance_min']),
+            'investment_assets': float(request.form['investment_assets']),
+            'mort_acc': float(request.form['mort_acc']),
+            'dti': float(request.form['dti']),
+            'cashflow_ratio': float(request.form['cashflow_ratio']),
+            'savings_rate': float(request.form['savings_rate']),
+            'digital_footprint_score': float(request.form['digital_footprint_score']),
+            'shopping_categories': float(request.form['shopping_categories']),
+            'gambling_expenses': float(request.form['gambling_expenses']),
+            'education_level': float(request.form['education_level']),
+            'open_acc': float(request.form['open_acc'])
+        }
+        
         try:
-            # Get and validate form data
-            input_data = {}
-            for field, field_type in required_fields.items():
-                try:
-                    value = request.form.get(field)
-                    if field_type == float:
-                        input_data[field] = float(value)
-                    elif field_type == int:
-                        input_data[field] = int(value)
-                    else:
-                        input_data[field] = value
-                except ValueError:
-                    flash(f'Invalid value for {field}. Expected {field_type.__name__}.', 'error')
-                    return redirect(url_for('apply'))
+            # Get prediction from model
+            result = credit_model.score_profile(data)
             
-            # Validate home_ownership value
-            valid_home_ownership = ['RENT', 'MORTGAGE', 'OWN', 'OTHER']
-            if input_data['home_ownership'] not in valid_home_ownership:
-                flash('Invalid home ownership value', 'error')
-                return redirect(url_for('apply'))
-            
-            # Encode home_ownership as integer
-            home_ownership_map = {'RENT': 0, 'MORTGAGE': 1, 'OWN': 2, 'OTHER': 3}
-            input_data['home_ownership'] = home_ownership_map.get(input_data['home_ownership'], 0)
-            
-            # Get prediction
-            prediction_result = credit_model.predict_credit_score(input_data)
-            
-            # Create prediction record
+            # Create new prediction record
             prediction = Prediction(
                 user_id=current_user.id,
-                credit_score=prediction_result['credit_score'],
-                credit_grade=prediction_result['credit_grade'],
-                default_probability=prediction_result['default_probability'],
-                recommendation=prediction_result['recommendation'],
-                rate_range=prediction_result['rate_range'],
-                breakdown=prediction_result['breakdown'],
-                **input_data
+                loan_amount=data['loan_amount'],
+                employment_length=data['employment_length'],
+                annual_income=data['annual_income'],
+                verification_status=data['verification_status'],
+                gig_platforms_count=data['gig_platforms_count'],
+                gig_platform_rating=data['gig_platform_rating'],
+                gig_completion_rate=data['gig_completion_rate'],
+                utility_payments_ontime=data['utility_payments_ontime'],
+                rent_payments_ontime=data['rent_payments_ontime'],
+                subscription_payments_ontime=data['subscription_payments_ontime'],
+                months_payment_history=data['months_payment_history'],
+                late_payments_90d=data['late_payments_90d'],
+                delinq_2yrs=data['delinq_2yrs'],
+                pub_rec=data['pub_rec'],
+                revol_util=data['revol_util'],
+                home_ownership=data['home_ownership'],
+                bank_balance_avg=data['bank_balance_avg'],
+                bank_balance_min=data['bank_balance_min'],
+                investment_assets=data['investment_assets'],
+                mort_acc=data['mort_acc'],
+                dti=data['dti'],
+                cashflow_ratio=data['cashflow_ratio'],
+                savings_rate=data['savings_rate'],
+                digital_footprint_score=data['digital_footprint_score'],
+                shopping_categories=data['shopping_categories'],
+                gambling_expenses=data['gambling_expenses'],
+                education_level=data['education_level'],
+                open_acc=data['open_acc'],
+                credit_score=result['final_score'],
+                grade=result['interpretation']['grade'],
+                recommendation=result['interpretation']['recommendation'],
+                rate_range=result['interpretation']['rate_range']
             )
             
             db.session.add(prediction)
             db.session.commit()
             
-            flash('Credit score prediction completed successfully!', 'success')
+            flash('Credit score assessment completed successfully!', 'success')
             return redirect(url_for('consumer_dashboard'))
             
         except Exception as e:
@@ -422,26 +427,59 @@ def apply():
 @app.route('/view_prediction/<int:user_id>')
 @login_required
 def view_customer_prediction(user_id):
-    if current_user.role != 'lender':
-        flash('Access denied')
-        return redirect(url_for('index'))
-    
     user = User.query.get_or_404(user_id)
-    prediction = Prediction.query.filter_by(user_id=user_id).order_by(Prediction.created_at.desc()).first()
+    prediction = Prediction.query.filter_by(user_id=user_id).order_by(Prediction.timestamp.desc()).first()
     
     if not prediction:
-        flash('No prediction found for this user')
+        flash('No prediction found for this user.', 'warning')
         return redirect(url_for('lender_dashboard'))
+
+    # Convert Prediction object to a dictionary for easier display
+    prediction_data = {
+        'loan_amount': prediction.loan_amount,
+        'employment_length': prediction.employment_length,
+        'annual_income': prediction.annual_income,
+        'verification_status': prediction.verification_status,
+        'gig_platforms_count': prediction.gig_platforms_count,
+        'gig_platform_rating': prediction.gig_platform_rating,
+        'gig_completion_rate': prediction.gig_completion_rate,
+        'utility_payments_ontime': prediction.utility_payments_ontime,
+        'rent_payments_ontime': prediction.rent_payments_ontime,
+        'subscription_payments_ontime': prediction.subscription_payments_ontime,
+        'months_payment_history': prediction.months_payment_history,
+        'late_payments_90d': prediction.late_payments_90d,
+        'delinq_2yrs': prediction.delinq_2yrs,
+        'pub_rec': prediction.pub_rec,
+        'revol_util': prediction.revol_util,
+        'home_ownership': prediction.home_ownership,
+        'bank_balance_avg': prediction.bank_balance_avg,
+        'bank_balance_min': prediction.bank_balance_min,
+        'investment_assets': prediction.investment_assets,
+        'mort_acc': prediction.mort_acc,
+        'dti': prediction.dti,
+        'cashflow_ratio': prediction.cashflow_ratio,
+        'savings_rate': prediction.savings_rate,
+        'digital_footprint_score': prediction.digital_footprint_score,
+        'shopping_categories': prediction.shopping_categories,
+        'gambling_expenses': prediction.gambling_expenses,
+        'education_level': prediction.education_level,
+        'open_acc': prediction.open_acc,
+        'credit_score': prediction.credit_score,
+        'grade': prediction.grade,
+        'recommendation': prediction.recommendation,
+        'rate_range': prediction.rate_range,
+        'timestamp': prediction.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+    }
     
-    return render_template('view_prediction.html', customer=user, prediction=prediction)
+    return render_template('view_prediction.html', user=user, prediction=prediction_data)
 
 @app.route('/create_customer', methods=['GET', 'POST'])
 @login_required
 def create_customer_form():
     if current_user.role != 'lender':
-        flash('Access denied')
-        return redirect(url_for('index'))
-    
+        flash('Only lenders can create new customers.', 'warning')
+        return redirect(url_for('lender_dashboard'))
+
     if request.method == 'POST':
         username = request.form.get('username')
         name = request.form.get('name')
@@ -450,29 +488,29 @@ def create_customer_form():
         password = request.form.get('password')
         
         if User.query.filter_by(username=username).first():
-            flash('Username already exists')
+            flash('Username already exists.', 'danger')
             return redirect(url_for('create_customer_form'))
-        
+
         if User.query.filter_by(email=email).first():
-            flash('Email already registered')
+            flash('Email already registered.', 'danger')
             return redirect(url_for('create_customer_form'))
-        
-        user = User(
+
+        new_consumer = User(
             username=username,
             name=name,
             email=email,
             phone=phone,
             role='consumer',
-            created_by=current_user.id  # Set the creator to the current lender
+            created_by=current_user.id # Assign the current lender as the creator
         )
-        user.set_password(password)
-        db.session.add(user)
+        new_consumer.set_password(password)
+        db.session.add(new_consumer)
         db.session.commit()
-        
-        flash('Customer created successfully')
+
+        flash(f'Consumer {username} created successfully!', 'success')
         return redirect(url_for('lender_dashboard'))
-    
-    return render_template('create_customer.html')
+
+    return render_template('create_customer.html', user_role=current_user.role)
 
 if __name__ == '__main__':
     app.run(debug=True) 

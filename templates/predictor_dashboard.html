@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Predictor Dashboard</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Predictions</h5>
+                    <h2 class="card-text">{{ total_predictions }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Average Score</h5>
+                    <h2 class="card-text">{{ average_score|round|int }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Most Common Grade</h5>
+                    <h2 class="card-text">{{ most_common_grade }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if recent_predictions %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Recent Predictions</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Score</th>
+                            <th>Grade</th>
+                            <th>Recommendation</th>
+                            <th>Rate Range</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prediction in recent_predictions %}
+                        <tr>
+                            <td>{{ prediction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ prediction.user.username }}</td>
+                            <td>{{ prediction.credit_score }}</td>
+                            <td>{{ prediction.credit_grade }}</td>
+                            <td>{{ prediction.recommendation }}</td>
+                            <td>{{ prediction.rate_range }}</td>
+                            <td>
+                                <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#predictionModal{{ prediction.id }}">
+                                    View Details
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction Detail Modals -->
+    {% for prediction in recent_predictions %}
+    <div class="modal fade" id="predictionModal{{ prediction.id }}" tabindex="-1" aria-labelledby="predictionModalLabel{{ prediction.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="predictionModalLabel{{ prediction.id }}">Prediction Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Basic Information</h6>
+                            <p><strong>User:</strong> {{ prediction.user.username }}</p>
+                            <p><strong>Date:</strong> {{ prediction.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p><strong>Credit Score:</strong> {{ prediction.credit_score }}</p>
+                            <p><strong>Grade:</strong> {{ prediction.credit_grade }}</p>
+                            <p><strong>Recommendation:</strong> {{ prediction.recommendation }}</p>
+                            <p><strong>Rate Range:</strong> {{ prediction.rate_range }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Score Breakdown</h6>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ prediction.breakdown.income_stability }}%"
+                                     aria-valuenow="{{ prediction.breakdown.income_stability }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    Income Stability: {{ prediction.breakdown.income_stability }}%
+                                </div>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {{ prediction.breakdown.payment_consistency }}%"
+                                     aria-valuenow="{{ prediction.breakdown.payment_consistency }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    Payment Consistency: {{ prediction.breakdown.payment_consistency }}%
+                                </div>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: {{ prediction.breakdown.asset_value }}%"
+                                     aria-valuenow="{{ prediction.breakdown.asset_value }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    Asset Value: {{ prediction.breakdown.asset_value }}%
+                                </div>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {{ prediction.breakdown.behavioral_factors }}%"
+                                     aria-valuenow="{{ prediction.breakdown.behavioral_factors }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    Behavioral Factors: {{ prediction.breakdown.behavioral_factors }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Input Parameters</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Loan Amount:</th>
+                                        <td>${{ prediction.loan_amount }}</td>
+                                        <th>Employment Length:</th>
+                                        <td>{{ prediction.employment_length }} years</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Annual Income:</th>
+                                        <td>${{ prediction.annual_income }}</td>
+                                        <th>Verification Status:</th>
+                                        <td>{{ prediction.verification_status }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Home Ownership:</th>
+                                        <td>{{ prediction.home_ownership }}</td>
+                                        <th>DTI Ratio:</th>
+                                        <td>{{ prediction.dti }}%</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Gig Platforms:</th>
+                                        <td>{{ prediction.gig_platforms_count }}</td>
+                                        <th>Gig Rating:</th>
+                                        <td>{{ prediction.gig_platform_rating }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-info mt-4">
+        No predictions have been made yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 
