@@ -16,9 +16,29 @@ from flask_migrate import Migrate
 from credit_scoring_model import CreditScoringModel
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///credit_ml.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///credit_ml.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+# Configure SQLite to use a compatible version
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import sqlite3
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+# Remove HTTPS redirection
+# @app.before_request
+# def before_request():
+#     if not request.is_secure and os.environ.get('FLASK_ENV') == 'production':
+#         url = request.url.replace('http://', 'https://', 1)
+#         return redirect(url, code=301)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -209,30 +229,35 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        if current_user.role == 'consumer':
+            return redirect(url_for('consumer_dashboard'))
+        elif current_user.role == 'lender':
+            return redirect(url_for('lender_dashboard'))
 
     if request.method == 'POST':
         username = request.form.get('username')
+        password = request.form.get('password')
         name = request.form.get('name')
         email = request.form.get('email')
         phone = request.form.get('phone')
-        password = request.form.get('password')
-        role = request.form.get('role') # Get role from form ('consumer' or 'lender')
+        role = request.form.get('role')
 
-        if User.query.filter_by(username=username).first():
+        if get_user_by_username(username):
             flash('Username already exists')
-            return redirect(url_for('register'))
+            return render_template('register.html')
 
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered')
-            return redirect(url_for('register'))
+        if get_user_by_email(email):
+            flash('Email already exists')
+            return render_template('register.html')
 
         user = User(username=username, name=name, email=email, phone=phone, role=role)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
 
-        return redirect(url_for('login')) # Redirect to login after successful registration
+        flash('Registration successful! Please login.')
+        return redirect(url_for('login'))
+
     return render_template('register.html')
 
 @app.route('/logout')
@@ -245,234 +270,168 @@ def logout():
 @login_required
 def consumer_dashboard():
     if current_user.role != 'consumer':
-        return "Unauthorized", 403 # Or redirect to their correct dashboard
-
-    # Get data for the logged-in consumer
-    dashboard_data = get_consumer_dashboard_data(current_user.id)
-    
-    if dashboard_data is None:
-        # Handle case where user data is not found or not a consumer (shouldn't happen with @login_required and role check)
-        flash('Could not load consumer dashboard data.', 'danger')
+        flash('Access denied. Consumer dashboard only.')
         return redirect(url_for('index'))
 
-    return render_template('dashboard_consumer.html', data=dashboard_data, user_role=current_user.role, is_lender_view=False)
+    dashboard_data = get_consumer_dashboard_data(current_user.id)
+    return render_template('consumer_dashboard.html', dashboard_data=dashboard_data)
 
 @app.route('/dashboard/lender')
 @login_required
 def lender_dashboard():
     if current_user.role != 'lender':
-        return redirect(url_for('dashboard_consumer')) # Redirect if not a lender
+        flash('Access denied. Lender dashboard only.')
+        return redirect(url_for('index'))
 
-    # Get only consumers created by this lender
+    # Get all consumers created by this lender
     consumers = User.query.filter_by(role='consumer', created_by=current_user.id).all()
     
-    # Get their latest predictions
-    consumer_list = []
+    # Get recent predictions for these consumers
+    recent_predictions = []
     for consumer in consumers:
-        latest_prediction = Prediction.query.filter_by(user_id=consumer.id).order_by(Prediction.created_at.desc()).first()
-        consumer_list.append({
-            'id': consumer.id,
-            'name': consumer.username,
-            'email': consumer.email,
-            'predictions': latest_prediction
-        })
+        if consumer.predictions:
+            latest_prediction = sorted(consumer.predictions, key=lambda x: x.created_at)[-1]
+            recent_predictions.append({
+                'consumer': consumer,
+                'prediction': latest_prediction
+            })
     
-    # Get dashboard statistics
-    total_clients = len(consumers)
-    total_assets = sum(p.loan_amnt for p in Prediction.query.filter(Prediction.user_id.in_([c.id for c in consumers])).all() if p.loan_amnt is not None)
-    avg_risk_score = total_assets / total_clients if total_clients > 0 else 0
+    # Sort by prediction date
+    recent_predictions.sort(key=lambda x: x['prediction'].created_at, reverse=True)
     
-    # Get recent applications for this lender's consumers
-    recent_applications = Prediction.query.filter(
-        Prediction.user_id.in_([c.id for c in consumers])
-    ).order_by(Prediction.created_at.desc()).limit(5).all()
-    
-    # Prepare chart data
-    risk_distribution_data = {
-        'labels': ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
-        'datasets': [{
-            'data': [20, 30, 25, 15, 5, 3, 2],
-            'backgroundColor': ['#4CAF50', '#8BC34A', '#FFC107', '#FF9800', '#FF5722', '#F44336', '#D32F2F']
-        }]
-    }
-    
-    application_status_data = {
-        'labels': ['Approved', 'Conditionally Approved', 'Denied'],
-        'datasets': [{
-            'data': [60, 25, 15],
-            'backgroundColor': ['#4CAF50', '#FFC107', '#F44336']
-        }]
-    }
-    
-    loan_performance_data = {
-        'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        'datasets': [{
-            'label': 'Performance',
-            'data': [65, 70, 75, 72, 78, 80],
-            'borderColor': '#2196F3',
-            'fill': False
-        }]
-    }
-    
-    geographic_distribution_data = {
-        'labels': ['North', 'South', 'East', 'West', 'Central'],
-        'datasets': [{
-            'data': [25, 20, 15, 20, 20],
-            'backgroundColor': ['#2196F3', '#4CAF50', '#FFC107', '#FF9800', '#9C27B0']
-        }]
-    }
-    
-    return render_template('dashboard_lender.html',
-                         data={
-                             'total_clients': total_clients,
-                             'total_assets': f"{total_assets:,.2f}",
-                             'avg_risk_score': f"{avg_risk_score:.2f}",
-                             'client_list': consumer_list,
-                             'recent_applications': recent_applications,
-                             'risk_distribution_data': risk_distribution_data,
-                             'application_status_data': application_status_data,
-                             'loan_performance_data': loan_performance_data,
-                             'geographic_distribution_data': geographic_distribution_data
-                         })
+    return render_template('lender_dashboard.html', consumers=consumers, recent_predictions=recent_predictions)
 
 @app.route('/apply', methods=['GET', 'POST'])
 @login_required
 def apply():
+    if current_user.role != 'consumer':
+        flash('Access denied. Consumer only.')
+        return redirect(url_for('index'))
+
     if request.method == 'POST':
-        # List of required fields and their expected types
-        required_fields = {
-            'loan_amnt': float,
-            'emp_length': int,
-            'annual_inc': float,
-            'verification_status': int,
-            'delinq_2yrs': int,
-            'pub_rec': int,
-            'revol_util': float,
-            'home_ownership': str,
-            'mort_acc': int,
-            'dti': float,
-            'open_acc': int,
-            'total_acc': int,
-            'inq_last_6mths': int
-        }
+        # Get form data
+        loan_amnt = float(request.form.get('loan_amnt'))
+        emp_length = int(request.form.get('emp_length'))
+        annual_inc = float(request.form.get('annual_inc'))
+        verification_status = int(request.form.get('verification_status'))
+        delinq_2yrs = int(request.form.get('delinq_2yrs'))
+        pub_rec = int(request.form.get('pub_rec'))
+        revol_util = float(request.form.get('revol_util'))
+        home_ownership = request.form.get('home_ownership')
+        mort_acc = int(request.form.get('mort_acc'))
+        dti = float(request.form.get('dti'))
+        open_acc = int(request.form.get('open_acc'))
+        total_acc = int(request.form.get('total_acc'))
+        inq_last_6mths = int(request.form.get('inq_last_6mths'))
+
+        # Prepare input data
+        input_data = pd.DataFrame({
+            'loan_amnt': [loan_amnt],
+            'emp_length': [emp_length],
+            'annual_inc': [annual_inc],
+            'verification_status': [verification_status],
+            'delinq_2yrs': [delinq_2yrs],
+            'pub_rec': [pub_rec],
+            'revol_util': [revol_util],
+            'home_ownership': [home_ownership],
+            'mort_acc': [mort_acc],
+            'dti': [dti],
+            'open_acc': [open_acc],
+            'total_acc': [total_acc],
+            'inq_last_6mths': [inq_last_6mths]
+        })
+
+        # Get prediction
+        prediction_result = credit_model.predict(input_data)
         
-        # Check for missing fields
-        missing_fields = []
-        for field, field_type in required_fields.items():
-            if field not in request.form or not request.form.get(field):
-                missing_fields.append(field)
+        # Create prediction record
+        prediction = Prediction(
+            user_id=current_user.id,
+            credit_score=prediction_result['credit_score'],
+            credit_grade=prediction_result['credit_grade'],
+            default_probability=prediction_result['default_probability'],
+            recommendation=prediction_result['recommendation'],
+            rate_range=prediction_result['rate_range'],
+            loan_amnt=loan_amnt,
+            emp_length=emp_length,
+            annual_inc=annual_inc,
+            verification_status=verification_status,
+            delinq_2yrs=delinq_2yrs,
+            pub_rec=pub_rec,
+            revol_util=revol_util,
+            home_ownership=home_ownership,
+            mort_acc=mort_acc,
+            dti=dti,
+            open_acc=open_acc,
+            total_acc=total_acc,
+            inq_last_6mths=inq_last_6mths,
+            breakdown=prediction_result.get('breakdown', {})
+        )
         
-        if missing_fields:
-            flash(f'Missing required fields: {", ".join(missing_fields)}', 'error')
-            return redirect(url_for('apply'))
-        
-        try:
-            # Get and validate form data
-            input_data = {}
-            for field, field_type in required_fields.items():
-                try:
-                    value = request.form.get(field)
-                    if field_type == float:
-                        input_data[field] = float(value)
-                    elif field_type == int:
-                        input_data[field] = int(value)
-                    else:
-                        input_data[field] = value
-                except ValueError:
-                    flash(f'Invalid value for {field}. Expected {field_type.__name__}.', 'error')
-                    return redirect(url_for('apply'))
-            
-            # Validate home_ownership value
-            valid_home_ownership = ['RENT', 'MORTGAGE', 'OWN', 'OTHER']
-            if input_data['home_ownership'] not in valid_home_ownership:
-                flash('Invalid home ownership value', 'error')
-                return redirect(url_for('apply'))
-            
-            # Encode home_ownership as integer
-            home_ownership_map = {'RENT': 0, 'MORTGAGE': 1, 'OWN': 2, 'OTHER': 3}
-            input_data['home_ownership'] = home_ownership_map.get(input_data['home_ownership'], 0)
-            
-            # Get prediction
-            prediction_result = credit_model.predict_credit_score(input_data)
-            
-            # Create prediction record
-            prediction = Prediction(
-                user_id=current_user.id,
-                credit_score=prediction_result['credit_score'],
-                credit_grade=prediction_result['credit_grade'],
-                default_probability=prediction_result['default_probability'],
-                recommendation=prediction_result['recommendation'],
-                rate_range=prediction_result['rate_range'],
-                breakdown=prediction_result['breakdown'],
-                **input_data
-            )
-            
-            db.session.add(prediction)
-            db.session.commit()
-            
-            flash('Credit score prediction completed successfully!', 'success')
-            return redirect(url_for('consumer_dashboard'))
-            
-        except Exception as e:
-            flash(f'Error processing prediction: {str(e)}', 'error')
-            return redirect(url_for('apply'))
-            
+        db.session.add(prediction)
+        db.session.commit()
+
+        flash('Application submitted successfully!')
+        return redirect(url_for('consumer_dashboard'))
+
     return render_template('apply.html')
 
 @app.route('/view_prediction/<int:user_id>')
 @login_required
 def view_customer_prediction(user_id):
     if current_user.role != 'lender':
-        flash('Access denied')
+        flash('Access denied. Lender only.')
         return redirect(url_for('index'))
-    
+
     user = User.query.get_or_404(user_id)
-    prediction = Prediction.query.filter_by(user_id=user_id).order_by(Prediction.created_at.desc()).first()
-    
-    if not prediction:
-        flash('No prediction found for this user')
+    if user.role != 'consumer' or user.created_by != current_user.id:
+        flash('Access denied. Not your customer.')
         return redirect(url_for('lender_dashboard'))
-    
-    return render_template('view_prediction.html', customer=user, prediction=prediction)
+
+    latest_prediction = None
+    if user.predictions:
+        latest_prediction = sorted(user.predictions, key=lambda x: x.created_at)[-1]
+
+    return render_template('view_prediction.html', user=user, prediction=latest_prediction)
 
 @app.route('/create_customer', methods=['GET', 'POST'])
 @login_required
 def create_customer_form():
     if current_user.role != 'lender':
-        flash('Access denied')
+        flash('Access denied. Lender only.')
         return redirect(url_for('index'))
-    
+
     if request.method == 'POST':
         username = request.form.get('username')
+        password = request.form.get('password')
         name = request.form.get('name')
         email = request.form.get('email')
         phone = request.form.get('phone')
-        password = request.form.get('password')
-        
-        if User.query.filter_by(username=username).first():
+
+        if get_user_by_username(username):
             flash('Username already exists')
-            return redirect(url_for('create_customer_form'))
-        
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered')
-            return redirect(url_for('create_customer_form'))
-        
+            return render_template('create_customer.html')
+
+        if get_user_by_email(email):
+            flash('Email already exists')
+            return render_template('create_customer.html')
+
         user = User(
             username=username,
             name=name,
             email=email,
             phone=phone,
             role='consumer',
-            created_by=current_user.id  # Set the creator to the current lender
+            created_by=current_user.id
         )
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        
-        flash('Customer created successfully')
+
+        flash('Customer created successfully!')
         return redirect(url_for('lender_dashboard'))
-    
+
     return render_template('create_customer.html')
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
