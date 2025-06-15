@@ -38,4 +38,4 @@ __pycache__
 *.diff
 *.patch
 *.DS_Store
-Thumbs.db 
+Thumbs.db
