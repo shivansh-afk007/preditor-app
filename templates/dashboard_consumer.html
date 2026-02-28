@@ -2,195 +2,1715 @@
 
 {% block title %}{{ super() }} - Consumer Dashboard{% endblock %}
 
-{% block content %}
-<h2 class="mb-4">Consumer Dashboard</h2>
+{% block breadcrumb_items %}
+<div class="breadcrumb-item active">Dashboard</div>
+{% endblock %}
 
-{% if data.prediction != 'No prediction yet.' %}
-<div class="card mt-4">
-    <div class="card-body">
-        <h4 class="card-title">Your Latest Credit Prediction</h4>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item"><strong>Credit Score:</strong> {{ data.credit_score }}</li>
-            <li class="list-group-item"><strong>Grade:</strong> {{ data.grade }}</li>
-            <li class="list-group-item"><strong>Recommendation:</strong> {{ data.prediction }}</li>
-            <li class="list-group-item"><strong>Rate Range:</strong> {{ data.rate_range }}</li>
-        </ul>
-        
-        {% if data.category_scores %}
-        <h5 class="mt-3">Component Breakdown</h5>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item"><strong>Income Stability:</strong> {{ data.category_scores.income_stability }}%</li>
-            <li class="list-group-item"><strong>Payment Consistency:</strong> {{ data.category_scores.payment_consistency }}%</li>
-            <li class="list-group-item"><strong>Asset Value:</strong> {{ data.category_scores.asset_value }}%</li>
-            <li class="list-group-item"><strong>Behavioral Factors:</strong> {{ data.category_scores.behavioral_factors }}%</li>
-        </ul>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--radius-md);
+        border: 2px solid var(--primary-blue);
+        background: white;
+        color: var(--primary-blue);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quick-action-btn:hover {
+        background: var(--primary-blue);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: var(--radius-xl);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-card);
+        transition: all var(--transition-base);
+    }
+
+    .stat-card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-4px);
+    }
+
+    .stat-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-card-icon.primary {
+        background: var(--primary-blue-lighter);
+        color: var(--primary-blue);
+    }
+
+    .stat-card-icon.success {
+        background: var(--success-light);
+        color: var(--success-green);
+    }
+
+    .stat-card-icon.warning {
+        background: var(--warning-light);
+        color: var(--warning-orange);
+    }
+
+    .stat-card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-card-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .credit-score-trend {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .trend-up {
+        color: var(--success-green);
+    }
+
+    .trend-down {
+        color: var(--danger-red);
+    }
+
+    .trend-neutral {
+        color: var(--text-muted);
+    }
+
+    .workflow-modal .modal-content {
+        border: 0;
+        border-radius: 16px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+    }
+
+    .workflow-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 999px;
+        padding: 0.375rem 0.875rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #0b5ed7;
+        background: #eaf2ff;
+        margin-bottom: 0.75rem;
+    }
+
+    .workflow-steps {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: var(--text-secondary);
+    }
+
+    .workflow-steps li {
+        margin-bottom: 0.5rem;
+    }
+
+    .argyle-status-banner {
+        display: none;
+        margin-top: 1rem;
+    }
+
+    .grade-gauge-panel {
+        border: 1px solid #e9edf5;
+        border-radius: 14px;
+        padding: 0.85rem 0.75rem 0.5rem;
+        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+        margin-bottom: 1rem;
+    }
+
+    .grade-gauge-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .grade-gauge-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.45px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .grade-gauge-chip {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.35px;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        color: #fff;
+        text-transform: uppercase;
+    }
+
+    .grade-gauge-chip.grade-poor { background: #e74c3c; }
+    .grade-gauge-chip.grade-fair { background: #f39c12; }
+    .grade-gauge-chip.grade-good { background: #f1c40f; color: #2f2f2f; }
+    .grade-gauge-chip.grade-very-good { background: #3498db; }
+    .grade-gauge-chip.grade-excellent { background: #27ae60; }
+
+    .grade-gauge-canvas-wrap {
+        display: flex;
+        justify-content: center;
+        margin-top: 0.1rem;
+    }
+
+    .grade-gauge-score {
+        margin-top: -82px;
+        text-align: center;
+        font-size: 1.7rem;
+        line-height: 1.05;
+        font-weight: 800;
+        color: #1f2a44;
+        position: relative;
+        z-index: 2;
+    }
+
+    .grade-gauge-score small {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        letter-spacing: 0.45px;
+        text-transform: uppercase;
+    }
+
+    .score-gauge-shell {
+        position: relative;
+        max-width: 430px;
+        margin: 0 auto;
+        padding-top: 0.25rem;
+    }
+
+    .score-gauge-svg {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .score-gauge-track {
+        fill: none;
+        stroke: #e7ecf6;
+        stroke-width: 18;
+        stroke-linecap: round;
+    }
+
+    .score-gauge-progress {
+        fill: none;
+        stroke: url(#scoreGaugeGradient);
+        stroke-width: 18;
+        stroke-linecap: round;
+        filter: drop-shadow(0 3px 8px rgba(37, 99, 235, 0.25));
+    }
+
+    .score-gauge-pointer circle:first-child {
+        fill: #1f2a44;
+    }
+
+    .score-gauge-pointer circle:last-child {
+        fill: #fff;
+        stroke: #1f2a44;
+        stroke-width: 2;
+    }
+
+    .score-gauge-overlay {
+        position: absolute;
+        top: 66%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+    }
+
+    .score-gauge-value {
+        font-size: 3.25rem;
+        line-height: 1;
+        font-weight: 800;
+        color: #1d4ed8;
+        letter-spacing: -1px;
+        margin-bottom: 0.35rem;
+    }
+
+    .score-gauge-meta {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+
+    .score-zone-list {
+        margin-top: 0.85rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.45rem;
+    }
+
+    .score-zone-chip {
+        border: 1px solid #d8deea;
+        background: #fff;
+        border-radius: 999px;
+        padding: 0.22rem 0.58rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #4b5563;
+        transition: all 0.2s ease;
+        cursor: default;
+    }
+
+    .score-zone-chip.active {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(31, 41, 55, 0.15);
+        border-color: transparent;
+        color: #fff;
+    }
+
+    .score-zone-chip.zone-poor.active { background: #e74c3c; }
+    .score-zone-chip.zone-fair.active { background: #f39c12; }
+    .score-zone-chip.zone-good.active { background: #f1c40f; color: #2f2f2f; }
+    .score-zone-chip.zone-very-good.active { background: #3498db; }
+    .score-zone-chip.zone-excellent.active { background: #27ae60; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="workflowState" data-argyle-connected="{{ '1' if connection_status.argyle else '0' }}" style="display: none;"></div>
+<div class="dashboard-header">
+    <div>
+        <h2 class="mb-1">Welcome back, {{ current_user.name or current_user.username }}!</h2>
+        <p class="text-muted">Here's your credit overview</p>
+    </div>
+    <div class="quick-actions">
+        <button type="button" class="quick-action-btn js-apply-now-trigger">
+            <i class="fas fa-file-alt"></i>
+            <span>Apply Now</span>
+        </button>
+        <button class="quick-action-btn" onclick="generateReport()">
+            <i class="fas fa-download"></i>
+            <span>Generate Report</span>
+        </button>
+        <a href="#" class="quick-action-btn">
+            <i class="fas fa-chart-line"></i>
+            <span>View History</span>
+        </a>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-icon primary">
+            <i class="fas fa-credit-card"></i>
+        </div>
+        <div class="stat-card-value">{{ data.credit_score if data.credit_score else 'N/A' }}</div>
+        <div class="stat-card-label">Credit Score</div>
+        {% if data.credit_score %}
+        <div class="credit-score-trend trend-up">
+            <i class="fas fa-arrow-up"></i>
+            <span>+12 points this month</span>
+        </div>
         {% endif %}
     </div>
+    <div class="stat-card">
+        <div class="stat-card-icon success">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="stat-card-value">${{ "{:,.0f}".format(data.earnings) if data.earnings else '0' }}</div>
+        <div class="stat-card-label">Monthly Earnings</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon warning">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+        <div class="stat-card-value">{{ data.low_risk_probability_numeric|round(2) * 100 if data.low_risk_probability_numeric else 0 }}%</div>
+        <div class="stat-card-label">Low Risk Probability</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon primary">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="stat-card-value">{{ data.loan_applications|length if data.loan_applications else 0 }}</div>
+        <div class="stat-card-label">Total Applications</div>
+    </div>
 </div>
-{% else %}
-<div class="alert alert-info mt-4">No prediction available yet. Please apply for credit.</div>
-{% endif %}
 
-{# --- Prediction Form --- #}
-{% if not is_lender_view %}
-<div class="card prediction-form-card mt-4">
-    <div class="card-body">
-        <h5 class="card-title">Apply for Credit Score</h5>
-        <form method="POST" action="{{ url_for('apply') }}">
-            <div class="row">
-                <!-- Income Stability Section -->
-                <div class="col-md-6 mb-3">
-                    <h5>Income Stability</h5>
-                    <div class="form-group">
-                        <label for="employment_length">Employment Length (years)</label>
-                        <input type="number" class="form-control" id="employment_length" name="employment_length" min="0" max="50" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="annual_income">Annual Income ($)</label>
-                        <input type="number" class="form-control" id="annual_income" name="annual_income" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loan_amount">Loan Amount ($)</label>
-                        <input type="number" class="form-control" id="loan_amount" name="loan_amount" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="verification_status">Verification Status</label>
-                        <select class="form-control" id="verification_status" name="verification_status" required>
-                            <option value="VERIFIED">Verified</option>
-                            <option value="SOURCE VERIFIED">Source Verified</option>
-                            <option value="NOT VERIFIED">Not Verified</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="gig_platforms_count">Number of Gig Platforms</label>
-                        <input type="number" class="form-control" id="gig_platforms_count" name="gig_platforms_count" min="0" max="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="gig_platform_rating">Gig Platform Rating (0-5)</label>
-                        <input type="number" class="form-control" id="gig_platform_rating" name="gig_platform_rating" min="0" max="5" step="0.1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="gig_completion_rate">Gig Completion Rate (0-1)</label>
-                        <input type="number" class="form-control" id="gig_completion_rate" name="gig_completion_rate" min="0" max="1" step="0.01" required>
-                    </div>
+<!-- Credit Score Display -->
+{% if data.credit_score or data.prediction != 'No prediction yet.' %}
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card credit-score-card">
+            <div class="card-header bg-gradient-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Your Credit Score
+                    </h5>
+                    <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Your credit score is calculated based on multiple factors including payment history, credit utilization, and financial behavior"></i>
                 </div>
-
-                <!-- Payment Consistency Section -->
-                <div class="col-md-6 mb-3">
-                    <h5>Payment Consistency</h5>
-                    <div class="form-group">
-                        <label for="utility_payments_ontime">Utility Payments On-time Rate (0-1)</label>
-                        <input type="number" class="form-control" id="utility_payments_ontime" name="utility_payments_ontime" min="0" max="1" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="rent_payments_ontime">Rent Payments On-time Rate (0-1)</label>
-                        <input type="number" class="form-control" id="rent_payments_ontime" name="rent_payments_ontime" min="0" max="1" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="subscription_payments_ontime">Subscription Payments On-time Rate (0-1)</label>
-                        <input type="number" class="form-control" id="subscription_payments_ontime" name="subscription_payments_ontime" min="0" max="1" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="months_payment_history">Months of Payment History</label>
-                        <input type="number" class="form-control" id="months_payment_history" name="months_payment_history" min="0" max="120" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="late_payments_90d">Late Payments (90+ days)</label>
-                        <input type="number" class="form-control" id="late_payments_90d" name="late_payments_90d" min="0" max="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="delinq_2yrs">Delinquencies in Last 2 Years</label>
-                        <input type="number" class="form-control" id="delinq_2yrs" name="delinq_2yrs" min="0" max="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="pub_rec">Public Records</label>
-                        <input type="number" class="form-control" id="pub_rec" name="pub_rec" min="0" max="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="revol_util">Revolving Utilization (%)</label>
-                        <input type="number" class="form-control" id="revol_util" name="revol_util" min="0" max="100" required>
-                    </div>
-                </div>
-
-                <!-- Asset Value Section -->
-                <div class="col-md-6 mb-3">
-                    <h5>Asset Value</h5>
-                    <div class="form-group">
-                        <label for="home_ownership">Home Ownership</label>
-                        <select class="form-control" id="home_ownership" name="home_ownership" required>
-                            <option value="OWN">Own</option>
-                            <option value="MORTGAGE">Mortgage</option>
-                            <option value="RENT">Rent</option>
-                            <option value="OTHER">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="bank_balance_avg">Average Bank Balance ($)</label>
-                        <input type="number" class="form-control" id="bank_balance_avg" name="bank_balance_avg" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="bank_balance_min">Minimum Bank Balance ($)</label>
-                        <input type="number" class="form-control" id="bank_balance_min" name="bank_balance_min" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="investment_assets">Investment Assets ($)</label>
-                        <input type="number" class="form-control" id="investment_assets" name="investment_assets" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="mort_acc">Number of Mortgage Accounts</label>
-                        <input type="number" class="form-control" id="mort_acc" name="mort_acc" min="0" max="10" required>
-                    </div>
-                </div>
-
-                <!-- Behavioral Factors Section -->
-                <div class="col-md-6 mb-3">
-                    <h5>Behavioral Factors</h5>
-                    <div class="form-group">
-                        <label for="dti">Debt-to-Income Ratio (%)</label>
-                        <input type="number" class="form-control" id="dti" name="dti" min="0" max="100" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="cashflow_ratio">Cash Flow Ratio</label>
-                        <input type="number" class="form-control" id="cashflow_ratio" name="cashflow_ratio" min="0" max="10" step="0.1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="savings_rate">Savings Rate (0-1)</label>
-                        <input type="number" class="form-control" id="savings_rate" name="savings_rate" min="0" max="1" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="digital_footprint_score">Digital Footprint Score (300-850)</label>
-                        <input type="number" class="form-control" id="digital_footprint_score" name="digital_footprint_score" min="300" max="850" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="shopping_categories">Number of Shopping Categories</label>
-                        <input type="number" class="form-control" id="shopping_categories" name="shopping_categories" min="1" max="20" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="gambling_expenses">Monthly Gambling Expenses ($)</label>
-                        <input type="number" class="form-control" id="gambling_expenses" name="gambling_expenses" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="education_level">Education Level (0-4)</label>
-                        <select class="form-control" id="education_level" name="education_level" required>
-                            <option value="0">Less than High School</option>
-                            <option value="1">High School</option>
-                            <option value="2">Some College</option>
-                            <option value="3">Bachelor's Degree</option>
-                            <option value="4">Graduate Degree</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="open_acc">Number of Open Accounts</label>
-                        <input type="number" class="form-control" id="open_acc" name="open_acc" min="0" max="50" required>
+            </div>
+            <div class="card-body p-4">
+                <div class="gauge-container">
+                    <div class="gauge-card">
+                        <div class="gauge-label">
+                            <span>Credit Score</span>
+                            <i class="fas fa-info-circle gauge-info" data-bs-toggle="tooltip" title="Your credit score is calculated based on multiple factors"></i>
+                        </div>
+                        <div class="score-gauge-shell" id="scoreGaugeShell">
+                            <svg class="score-gauge-svg" viewBox="0 0 380 230" role="img" aria-label="Credit score gauge from 0 to 850">
+                                <defs>
+                                    <linearGradient id="scoreGaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#ef4444"></stop>
+                                        <stop offset="40%" stop-color="#f59e0b"></stop>
+                                        <stop offset="65%" stop-color="#eab308"></stop>
+                                        <stop offset="82%" stop-color="#3b82f6"></stop>
+                                        <stop offset="100%" stop-color="#22c55e"></stop>
+                                    </linearGradient>
+                                </defs>
+                                <path id="mainGaugeArcPath" class="score-gauge-track" d="M 40 190 A 150 150 0 0 1 340 190"></path>
+                                <path id="mainGaugeProgress" class="score-gauge-progress" d="M 40 190 A 150 150 0 0 1 340 190"></path>
+                                <g id="mainGaugePointer" class="score-gauge-pointer" transform="translate(40, 190)">
+                                    <circle cx="0" cy="0" r="8"></circle>
+                                    <circle cx="0" cy="0" r="4"></circle>
+                                </g>
+                            </svg>
+                            <div class="score-gauge-overlay">
+                                <div class="score-gauge-value" id="gaugeScore">{{ data.credit_score if data.credit_score else 'N/A' }}</div>
+                                <div class="score-gauge-meta">Out of 850</div>
+                            </div>
+                        </div>
+                        <div class="gauge-labels">
+                            <span>0</span>
+                            <span>850</span>
+                        </div>
+                        <div class="score-zone-list" aria-label="Credit score ranges">
+                            <span class="score-zone-chip zone-poor" data-zone-min="0" data-zone-max="579">Poor</span>
+                            <span class="score-zone-chip zone-fair" data-zone-min="580" data-zone-max="669">Fair</span>
+                            <span class="score-zone-chip zone-good" data-zone-min="670" data-zone-max="739">Good</span>
+                            <span class="score-zone-chip zone-very-good" data-zone-min="740" data-zone-max="799">Very Good</span>
+                            <span class="score-zone-chip zone-excellent" data-zone-min="800" data-zone-max="850">Excellent</span>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary btn-lg">Submit Application</button>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Key Information</h5>
             </div>
-        </form>
+            <div class="card-body">
+                <div class="grade-gauge-panel">
+                    <div class="grade-gauge-header">
+                        <p class="grade-gauge-title">Carried Score</p>
+                        <span class="grade-gauge-chip grade-{{ data.credit_score_status.lower().replace(' ', '-') if data.credit_score_status else 'good' }}">
+                            {{ data.grade if data.grade else 'N/A' }}
+                        </span>
+                    </div>
+                    <div class="grade-gauge-canvas-wrap">
+                        <canvas id="gradeGauge" width="220" height="128"></canvas>
+                    </div>
+                    <div class="grade-gauge-score">
+                        {{ data.credit_score if data.credit_score else 'N/A' }}
+                        <small>Score Range 300 - 850</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Grade</label>
+                    <div class="h5 mb-0">{{ data.grade if data.grade else 'N/A' }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Recommendation</label>
+                    <div class="mb-0">{{ data.prediction if data.prediction else 'N/A' }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Rate Range</label>
+                    <div class="mb-0">{{ data.rate_range if data.rate_range else 'N/A' }}</div>
+                </div>
+                <div>
+                    <label class="text-muted small">Risk Assessment</label>
+                    <div>
+                        <span class="badge badge-{{ 'success' if data.low_risk_probability_numeric > 0.7 else 'warning' if data.low_risk_probability_numeric > 0.5 else 'danger' }}">
+                            {{ (data.low_risk_probability_numeric * 100)|round(1) if data.low_risk_probability_numeric else 0 }}% Low Risk
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credit Factors -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Credit Factors</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for factor, value in data.credit_factors.items() %}
+                    <span class="badge badge-factor badge-{{ 'good' if value != 'N/A' else 'medium' }}">
+                        {{ factor }}: {{ value }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommendations -->
+{% if data.recommendations %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Recommendations</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for recommendation in data.recommendations %}
+                    <li class="list-group-item">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        {{ recommendation }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
 {% endif %}
-{% endblock %} 
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Spending Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="spendingChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Credit Utilization</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="utilizationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- No Prediction Yet -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+        <h4>No Credit Assessment Yet</h4>
+        <p class="text-muted mb-4">Get started by applying for your first credit assessment</p>
+        <button type="button" class="btn btn-primary btn-lg js-apply-now-trigger">
+            <i class="fas fa-rocket me-2"></i>Apply Now
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Connection Status Banner -->
+{% if connection_status.both %}
+<div class="alert alert-success alert-dismissible fade show mt-4" role="alert">
+    <i class="fas fa-check-circle me-2"></i>
+    <strong>Unified Reports Available!</strong> Both Plaid and Argyle are connected. You can generate comprehensive unified credit reports.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<!-- Credit Report Generation Options -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Generate Credit Report</h5>
+        <div class="connection-status-badges d-flex gap-2">
+            {% if connection_status.plaid %}
+            <span class="badge bg-primary">
+                <i class="fas fa-check-circle me-1"></i>Plaid Connected
+            </span>
+            {% else %}
+            <span class="badge bg-secondary">
+                <i class="fas fa-times-circle me-1"></i>Plaid Not Connected
+            </span>
+            {% endif %}
+            {% if connection_status.argyle %}
+            <span class="badge bg-success" id="argyleConnectionBadge">
+                <i class="fas fa-check-circle me-1"></i>Argyle Connected
+            </span>
+            {% else %}
+            <span class="badge bg-secondary" id="argyleConnectionBadge">
+                <i class="fas fa-times-circle me-1"></i>Argyle Not Connected
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">Choose a method to automatically generate your credit report with minimal interaction</p>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 {% if connection_status.plaid %}border-success{% else %}border-primary{% endif %}">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-university fa-3x {% if connection_status.plaid %}text-success{% else %}text-primary{% endif %}"></i>
+                        </div>
+                        <h5 class="card-title">Via Plaid</h5>
+                        <p class="card-text text-muted small">Connect your bank account to automatically fetch financial data and generate your credit report</p>
+                        {% if connection_status.plaid %}
+                        <div class="alert alert-success mb-3 py-2">
+                            <i class="fas fa-check-circle me-1"></i>Connected
+                        </div>
+                        {% else %}
+                        <button class="btn btn-primary w-100" id="plaidConnectBtn">
+                            <i class="fas fa-link me-2"></i>Connect with Plaid
+                        </button>
+                        {% endif %}
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>Secure & Automated
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 {% if connection_status.argyle %}border-success{% else %}border-success{% endif %}">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-briefcase fa-3x {% if connection_status.argyle %}text-success{% else %}text-success{% endif %}"></i>
+                        </div>
+                        <h5 class="card-title">Via Argyle</h5>
+                        <p class="card-text text-muted small">Connect your employment account to fetch income and employment data for credit assessment</p>
+                        {% if connection_status.argyle %}
+                        <div class="alert alert-success mb-3 py-2">
+                            <i class="fas fa-check-circle me-1"></i>Connected
+                        </div>
+                        {% else %}
+                        <button class="btn btn-success w-100" onclick="startArgyleFlow()" id="argyleConnectBtn">
+                            <i class="fas fa-link me-2"></i>Connect with Argyle
+                        </button>
+                        {% endif %}
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>Secure & Automated
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if connection_status.plaid or connection_status.argyle %}
+        <div class="mt-4 text-center">
+            <button class="btn btn-lg btn-primary" onclick="generateReport()">
+                <i class="fas fa-file-invoice me-2"></i>Generate Credit Report
+            </button>
+            <p class="text-muted mt-2 small">
+                {% if connection_status.both %}
+                Generate a unified report using data from both Plaid and Argyle
+                {% elif connection_status.plaid %}
+                Generate a report using your Plaid data
+                {% else %}
+                Generate a report using your Argyle data
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Argyle Email Verification Status Card -->
+    <div id="argyleEmailStatusCard" class="card mt-4 border-info" style="display: none;">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-envelope-circle-check me-2"></i>Email Verification Required
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <div class="email-icon-wrapper mb-3">
+                        <i class="fas fa-envelope-open-text fa-4x text-info"></i>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h6 class="text-dark mb-3">Verification Email Sent</h6>
+                    <p class="text-muted mb-2">
+                        We have sent a verification email to <strong id="argyleEmailAddress" class="text-primary"></strong>. 
+                        Please check your inbox and click on the verification link to complete your employment account connection.
+                    </p>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Once you verify your email and connect your employment account, your credit score will be automatically generated.
+                    </p>
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="spinner-border text-info" role="status" id="argyleVerificationSpinner" style="display: none;">
+                        <span class="visually-hidden">Checking...</span>
+                    </div>
+                    <button class="btn btn-outline-info btn-sm" onclick="checkArgyleVerificationStatus()" id="checkVerificationBtn">
+                        <i class="fas fa-sync-alt me-1"></i>Check Status
+                    </button>
+                </div>
+            </div>
+            <div class="mt-3 pt-3 border-top">
+                <div class="alert alert-light mb-0" role="alert">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        <strong>Note:</strong> If you don't see the email, please check your spam folder. 
+                        The verification link will expire after 24 hours.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Apply Section -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Apply</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Start instant onboarding with Plaid and generate your report without manual data entry.</p>
+        <button type="button" class="btn btn-primary js-apply-now-trigger">
+            <i class="fas fa-arrow-right me-2"></i>Apply Now
+        </button>
+    </div>
+</div>
+
+<!-- Professional onboarding modal for apply flow -->
+<div class="modal fade workflow-modal" id="applyOnboardingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title">Application Onboarding</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <span class="workflow-chip">
+                    <i class="fas fa-university"></i>
+                    Zero manual entry
+                </span>
+                <p class="mb-2">We will start secure Plaid onboarding now and fetch your financial data automatically.</p>
+                <ul class="workflow-steps">
+                    <li>No manual value entry needed</li>
+                    <li>Automatic report generation starts after connection</li>
+                    <li>Then you can optionally continue with Argyle for gig/employment boost</li>
+                </ul>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Not now</button>
+                <button type="button" class="btn btn-primary" id="startPlaidOnboardingBtn">
+                    Start Plaid Onboarding
+                    <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Post-application modal that invites Argyle connection -->
+<div class="modal fade workflow-modal" id="argylePromptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title">Boost Your Credit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <span class="workflow-chip">
+                    <i class="fas fa-briefcase"></i>
+                    Optional but recommended
+                </span>
+                <p class="mb-2">Want to improve your credit score confidence with gig and employment verification?</p>
+                <p class="mb-0 text-muted">If you continue, we will trigger Argyle automatically and send a secure verification email to your registered address.</p>
+                <div id="argyleWorkflowStatusBanner" class="alert alert-info argyle-status-banner" role="alert"></div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Maybe later</button>
+                <button type="button" class="btn btn-success" id="continueArgyleFlowBtn">
+                    Continue
+                    <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+// Load Argyle script with error handling (optional - not required for email invitation flow)
+(function() {
+    const argyleScript = document.createElement('script');
+    argyleScript.src = 'https://static.argyle.com/link/v2/argyle.link.js';
+    argyleScript.onerror = function() {
+        console.warn('Argyle script failed to load - this is OK if using email invitation flow');
+    };
+    argyleScript.onload = function() {
+        console.log('Argyle script loaded successfully');
+    };
+    document.head.appendChild(argyleScript);
+})();
+
+// Ensure Plaid is loaded before proceeding
+window.addEventListener('load', function() {
+    if (typeof Plaid === 'undefined') {
+        console.warn('Plaid library not loaded yet, will retry...');
+        setTimeout(function() {
+            if (typeof Plaid === 'undefined') {
+                console.error('Plaid library failed to load');
+            } else {
+                console.log('Plaid library loaded successfully');
+            }
+        }, 2000);
+    } else {
+        console.log('Plaid library loaded successfully');
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+// Define Plaid functions in global scope BEFORE DOMContentLoaded
+// Make functions globally accessible
+window.plaidFlowInProgress = false; // Flag to prevent multiple simultaneous calls
+window.automatedApplyJourneyActive = false;
+
+function startAutomatedApplyJourney() {
+    window.automatedApplyJourneyActive = true;
+    window.startPlaidFlow();
+}
+
+function maybePromptArgyleAfterPlaid() {
+    const argylePromptModalEl = document.getElementById('argylePromptModal');
+    const argylePromptModal = argylePromptModalEl ? new bootstrap.Modal(argylePromptModalEl) : null;
+    if (argylePromptModal) {
+        setTimeout(() => argylePromptModal.show(), 450);
+    }
+}
+
+function setArgyleContinueButtonState(isLoading) {
+    const continueArgyleFlowBtn = document.getElementById('continueArgyleFlowBtn');
+    if (!continueArgyleFlowBtn) return;
+
+    continueArgyleFlowBtn.disabled = isLoading;
+    if (isLoading) {
+        continueArgyleFlowBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Starting...';
+    } else {
+        continueArgyleFlowBtn.innerHTML = 'Continue <i class="fas fa-arrow-right ms-2"></i>';
+    }
+}
+
+function setArgyleStatusBadge(state) {
+    const badge = document.getElementById('argyleConnectionBadge');
+    if (!badge) return;
+
+    badge.classList.remove('bg-secondary', 'bg-success', 'bg-warning');
+    if (state === 'pending') {
+        badge.classList.add('bg-warning');
+        badge.innerHTML = '<i class="fas fa-envelope me-1"></i>Argyle Email Sent';
+    } else if (state === 'connected') {
+        badge.classList.add('bg-success');
+        badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Argyle Connected';
+    } else {
+        badge.classList.add('bg-secondary');
+        badge.innerHTML = '<i class="fas fa-times-circle me-1"></i>Argyle Not Connected';
+    }
+}
+
+window.startPlaidFlow = function() {
+    console.log('startPlaidFlow called');
+    
+    // Prevent multiple simultaneous calls
+    if (window.plaidFlowInProgress) {
+        console.log('Plaid flow already in progress, ignoring duplicate call');
+        return;
+    }
+    
+    // Check if Loading and Toast are available
+    if (typeof Loading === 'undefined') {
+        console.error('Loading is not defined. Make sure main.js is loaded.');
+        alert('Loading system not available. Please refresh the page.');
+        return;
+    }
+    
+    if (typeof Toast === 'undefined') {
+        console.error('Toast is not defined. Make sure main.js is loaded.');
+        alert('Notification system not available. Please refresh the page.');
+        return;
+    }
+    
+    window.plaidFlowInProgress = true; // Set flag
+    Loading.show('Initializing Plaid connection...');
+    console.log('Loading overlay shown');
+    
+    // Start automated Plaid workflow
+    fetch('/api/plaid/start_flow', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(async response => {
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Failed to parse JSON:', e);
+            Loading.hide();
+            Toast.error('Invalid response from server: ' + responseText.substring(0, 100));
+            return;
+        }
+        
+        console.log('Response data:', data);
+        
+        if (!response.ok) {
+            Loading.hide();
+            const errorMsg = data.error || `HTTP error! status: ${response.status}`;
+            const detailsMsg = data.details ? ` Details: ${JSON.stringify(data.details)}` : '';
+            Toast.error(errorMsg + detailsMsg);
+            console.error('Error details:', data);
+            return;
+        }
+        
+        if (data.success) {
+            Loading.hide();
+            if (data.link_token) {
+                // Check if Plaid is loaded
+                if (typeof Plaid === 'undefined') {
+                    console.error('Plaid library not loaded');
+                    Toast.error('Plaid library not loaded. Please refresh the page.');
+                    return;
+                }
+                
+                console.log('Opening Plaid Link in new popup window...');
+                
+                // Open Plaid Link in a new popup window
+                const popupWidth = 600;
+                const popupHeight = 700;
+                const left = (window.screen.width - popupWidth) / 2;
+                const top = (window.screen.height - popupHeight) / 2;
+                
+                const popup = window.open(
+                    `/plaid/link?token=${encodeURIComponent(data.link_token)}`,
+                    'plaidLink',
+                    `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+                );
+                
+                if (!popup) {
+                    window.plaidFlowInProgress = false;
+                    Loading.hide();
+                    Toast.error('Popup blocked! Please allow popups for this site and try again.');
+                    return;
+                }
+                
+                // Listen for messages from the popup
+                let checkClosedInterval;
+                const messageHandler = function(event) {
+                    // Verify origin for security
+                    if (event.origin !== window.location.origin) {
+                        return;
+                    }
+                    
+                    if (event.data.type === 'plaid_success') {
+                        console.log('Plaid Link success from popup:', event.data.public_token.substring(0, 20) + '...');
+                        if (checkClosedInterval) clearInterval(checkClosedInterval);
+                        window.removeEventListener('message', messageHandler);
+                        if (popup && !popup.closed) {
+                            popup.close();
+                        }
+                        window.plaidFlowInProgress = false;
+                        Loading.show('Processing your connection and saving...');
+                        window.completePlaidFlow(event.data.public_token, event.data.metadata);
+                    } else if (event.data.type === 'plaid_exit') {
+                        console.log('Plaid Link exit from popup');
+                        if (checkClosedInterval) clearInterval(checkClosedInterval);
+                        window.removeEventListener('message', messageHandler);
+                        if (popup && !popup.closed) {
+                            popup.close();
+                        }
+                        window.plaidFlowInProgress = false;
+                        Loading.hide();
+                        if (event.data.error) {
+                            Toast.error('Connection cancelled or failed: ' + (event.data.error.error_message || 'Unknown error'));
+                        }
+                    } else if (event.data.type === 'plaid_ready') {
+                        console.log('Plaid Link popup ready');
+                    }
+                };
+                
+                window.addEventListener('message', messageHandler);
+                
+                // Check if popup was closed manually
+                checkClosedInterval = setInterval(() => {
+                    if (popup.closed) {
+                        clearInterval(checkClosedInterval);
+                        window.removeEventListener('message', messageHandler);
+                        window.plaidFlowInProgress = false;
+                        Loading.hide();
+                    }
+                }, 500);
+            } else {
+                console.error('No link_token in response');
+                window.plaidFlowInProgress = false; // Reset flag
+                Toast.error(data.error || 'Failed to initialize Plaid');
+            }
+        } else {
+            console.error('API returned success=false:', data);
+            window.plaidFlowInProgress = false; // Reset flag
+            Loading.hide();
+            const errorMsg = data.error || 'Failed to start Plaid flow';
+            const detailsMsg = data.details ? ` Details: ${JSON.stringify(data.details)}` : '';
+            Toast.error(errorMsg + detailsMsg);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        console.error('Error stack:', error.stack);
+        window.plaidFlowInProgress = false; // Reset flag
+        Loading.hide();
+        Toast.error('Error connecting to Plaid: ' + error.message);
+    });
+};
+
+window.completePlaidFlow = function(public_token, metadata) {
+    Loading.show('Completing Plaid connection...');
+    
+    fetch('/api/plaid/complete_flow', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            public_token: public_token,
+            metadata: metadata
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const isApplyJourney = window.automatedApplyJourneyActive;
+
+            if (isApplyJourney) {
+                Loading.hide();
+                Toast.success('Plaid onboarding completed successfully.');
+                maybePromptArgyleAfterPlaid();
+                Toast.info('Generating your credit report in the background...');
+                setTimeout(() => {
+                    pollForNewPrediction(false, false);
+                }, 2000);
+                window.automatedApplyJourneyActive = false;
+                return;
+            }
+
+            // Legacy path for non-journey Plaid connections
+            Toast.success('Plaid connected successfully! Refreshing dashboard...');
+            Loading.show('Refreshing dashboard to show connection status...');
+            sessionStorage.setItem('plaid_just_connected', 'true');
+            setTimeout(() => {
+                window.location.href = window.location.pathname + '?plaid_connected=true';
+            }, 1500);
+        } else {
+            Loading.hide();
+            Toast.error(data.error || 'Failed to complete connection');
+        }
+    })
+    .catch(error => {
+        Loading.hide();
+        Toast.error('Error completing connection: ' + error.message);
+    });
+};
+
+window.generatePlaidReport = function(user_token) {
+    Loading.show('Generating your credit report from Plaid data...');
+    
+    fetch('/api/plaid/generate_report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            user_token: user_token
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Toast.info(data.message || 'Credit report generation started. This may take a few moments...');
+            // Poll for new prediction to appear
+            pollForNewPrediction();
+        } else {
+            Loading.hide();
+            Toast.error(data.error || 'Failed to generate report');
+        }
+    })
+    .catch(error => {
+        Loading.hide();
+        Toast.error('Error generating report: ' + error.message);
+    });
+};
+
+function pollForNewPrediction(useLoadingOverlay = true, autoReload = true) {
+    let attempts = 0;
+    const maxAttempts = 30; // Check for 30 attempts (150 seconds total - Plaid reports can take time)
+    
+    const checkInterval = setInterval(() => {
+        attempts++;
+        console.log(`Polling for new prediction (attempt ${attempts}/${maxAttempts})...`);
+        
+        // Check if new prediction exists by fetching dashboard data
+        fetch('/dashboard/consumer', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Check if the page shows a credit score (not N/A)
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const creditScoreElement = doc.querySelector('.stat-card-value');
+            const creditScoreText = creditScoreElement ? creditScoreElement.textContent.trim() : '';
+            
+            // Check if we have a valid credit score (not N/A, not empty, and is a number)
+            const hasValidScore = creditScoreText && 
+                                 creditScoreText !== 'N/A' && 
+                                 creditScoreText !== '' && 
+                                 !isNaN(parseInt(creditScoreText));
+            
+            if (hasValidScore) {
+                // Prediction is ready!
+                clearInterval(checkInterval);
+                if (useLoadingOverlay) {
+                    Loading.hide();
+                }
+                if (autoReload) {
+                    Toast.success('Credit report generated successfully! Refreshing dashboard...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    Toast.success('Credit report generated successfully. Refresh the dashboard to see the latest score.');
+                }
+            } else if (attempts >= maxAttempts) {
+                // Timeout - refresh anyway to show any partial results
+                clearInterval(checkInterval);
+                if (useLoadingOverlay) {
+                    Loading.hide();
+                }
+                if (autoReload) {
+                    Toast.info('Report generation may still be in progress. Refreshing dashboard...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    Toast.info('Report generation is still in progress. You can refresh in a moment to check updates.');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking prediction status:', error);
+            if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                if (useLoadingOverlay) {
+                    Loading.hide();
+                }
+                if (autoReload) {
+                    Toast.info('Refreshing dashboard...');
+                    window.location.reload();
+                }
+            }
+        });
+    }, 5000); // Check every 5 seconds
+}
+
+window.startArgyleFlow = function() {
+    setArgyleContinueButtonState(true);
+    Loading.show('Initializing Argyle connection...');
+    
+    // Start automated Argyle workflow
+    fetch('/api/argyle/start_flow', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        Loading.hide();
+        if (data.success) {
+            if (data.message && data.email) {
+                // Email invitation sent - show professional UI element
+                showArgyleEmailStatus(data.email, data.invite_id);
+                showArgyleWorkflowStatus(`Verification email sent to ${data.email}. Please continue in your inbox to finish Argyle connection.`);
+                setArgyleStatusBadge('pending');
+                Toast.success('Verification email sent successfully!');
+                // Start checking verification status periodically
+                startVerificationStatusCheck(data.invite_id);
+            } else if (data.link_url) {
+                // Direct link approach (fallback)
+                Loading.show('Opening Argyle connection...');
+                window.location.href = data.link_url;
+            } else {
+                Toast.error(data.error || 'Failed to initialize Argyle');
+            }
+        } else {
+            Toast.error(data.error || 'Failed to start Argyle flow');
+        }
+        setArgyleContinueButtonState(false);
+    })
+    .catch(error => {
+        Loading.hide();
+        setArgyleContinueButtonState(false);
+        Toast.error('Error connecting to Argyle: ' + error.message);
+    });
+};
+
+function showArgyleWorkflowStatus(message) {
+    const statusBanner = document.getElementById('argyleWorkflowStatusBanner');
+    if (statusBanner) {
+        statusBanner.textContent = message;
+        statusBanner.style.display = 'block';
+    }
+}
+
+// Show professional email verification status card
+function showArgyleEmailStatus(email, inviteId) {
+    const card = document.getElementById('argyleEmailStatusCard');
+    const emailElement = document.getElementById('argyleEmailAddress');
+    
+    if (card && emailElement) {
+        emailElement.textContent = email;
+        card.style.display = 'block';
+        
+        // Store invite_id for status checking
+        if (inviteId) {
+            card.setAttribute('data-invite-id', inviteId);
+        }
+        
+        // Scroll to the card smoothly
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// Check Argyle verification status
+function checkArgyleVerificationStatus() {
+    const card = document.getElementById('argyleEmailStatusCard');
+    const inviteId = card ? card.getAttribute('data-invite-id') : null;
+    
+    if (!inviteId) {
+        Toast.error('No invite ID found. Please try connecting again.');
+        return;
+    }
+    
+    const spinner = document.getElementById('argyleVerificationSpinner');
+    const checkBtn = document.getElementById('checkVerificationBtn');
+    
+    if (spinner) spinner.style.display = 'inline-block';
+    if (checkBtn) checkBtn.disabled = true;
+    
+    fetch(`/api/argyle/check_verification/${inviteId}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (spinner) spinner.style.display = 'none';
+        if (checkBtn) checkBtn.disabled = false;
+        
+        if (data.success) {
+            if (data.verified) {
+                Toast.success('Email verified! Generating your credit report...');
+                // Hide the status card
+                if (card) card.style.display = 'none';
+                // Trigger report generation
+                generateArgyleReport();
+            } else {
+                Toast.info('Email verification is still pending. Please check your email and click the verification link.');
+            }
+        } else {
+            Toast.error(data.error || 'Failed to check verification status');
+        }
+    })
+    .catch(error => {
+        if (spinner) spinner.style.display = 'none';
+        if (checkBtn) checkBtn.disabled = false;
+        Toast.error('Error checking verification status: ' + error.message);
+    });
+}
+
+// Start periodic verification status check
+function startVerificationStatusCheck(inviteId) {
+    if (!inviteId) return;
+    
+    let checkCount = 0;
+    const maxChecks = 60; // Check for 5 minutes (60 * 5 seconds)
+    
+    const checkInterval = setInterval(() => {
+        checkCount++;
+        
+        fetch(`/api/argyle/check_verification/${inviteId}`, {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.verified) {
+                clearInterval(checkInterval);
+                const card = document.getElementById('argyleEmailStatusCard');
+                if (card) card.style.display = 'none';
+                setArgyleStatusBadge('connected');
+                Toast.success('Email verified! Generating your credit report...');
+                generateArgyleReport();
+            } else if (checkCount >= maxChecks) {
+                clearInterval(checkInterval);
+                Toast.info('Verification check timeout. Please click "Check Status" manually.');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking verification:', error);
+        });
+    }, 5000); // Check every 5 seconds
+}
+
+// Generate Argyle report after verification
+function generateArgyleReport() {
+    Loading.show('Generating your credit report from Argyle data...');
+    
+    fetch('/api/argyle/generate_report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        Loading.hide();
+        if (data.success) {
+            Toast.success('Credit report generated successfully!');
+            // Reload dashboard to show new data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            Toast.error(data.error || 'Failed to generate credit report');
+        }
+    })
+    .catch(error => {
+        Loading.hide();
+        Toast.error('Error generating report: ' + error.message);
+    });
+}
+
+// Check if we just completed a Plaid connection and need to poll for predictions
+function checkForPendingPlaidReport() {
+    // Check URL parameters or session storage to see if we just connected Plaid
+    const urlParams = new URLSearchParams(window.location.search);
+    const plaidConnected = urlParams.get('plaid_connected');
+    const justConnected = sessionStorage.getItem('plaid_just_connected');
+    
+    if (plaidConnected === 'true' || justConnected === 'true') {
+        // Clear the flag
+        sessionStorage.removeItem('plaid_just_connected');
+        
+        // Remove plaid_connected from URL without reload
+        if (plaidConnected === 'true') {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+        
+        // Check if we already have a prediction with a credit score
+        const creditScoreElement = document.querySelector('.stat-card-value');
+        const hasScore = creditScoreElement && creditScoreElement.textContent.trim() !== 'N/A';
+        
+        if (!hasScore) {
+            // Start polling for new prediction
+            Loading.show('Generating your credit report from Plaid data...');
+            setTimeout(() => {
+                pollForNewPrediction();
+            }, 2000); // Wait 2 seconds before starting to poll
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const applyOnboardingModalEl = document.getElementById('applyOnboardingModal');
+    const argylePromptModalEl = document.getElementById('argylePromptModal');
+    const applyOnboardingModal = applyOnboardingModalEl ? new bootstrap.Modal(applyOnboardingModalEl) : null;
+    const argylePromptModal = argylePromptModalEl ? new bootstrap.Modal(argylePromptModalEl) : null;
+
+    document.querySelectorAll('.js-apply-now-trigger').forEach((button) => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (applyOnboardingModal) {
+                applyOnboardingModal.show();
+            } else {
+                startAutomatedApplyJourney();
+            }
+        });
+    });
+
+    const startPlaidOnboardingBtn = document.getElementById('startPlaidOnboardingBtn');
+    if (startPlaidOnboardingBtn) {
+        startPlaidOnboardingBtn.addEventListener('click', function() {
+            if (applyOnboardingModal) {
+                applyOnboardingModal.hide();
+            }
+            startAutomatedApplyJourney();
+        });
+    }
+
+    const continueArgyleFlowBtn = document.getElementById('continueArgyleFlowBtn');
+    if (continueArgyleFlowBtn) {
+        continueArgyleFlowBtn.addEventListener('click', function() {
+            if (argylePromptModal) {
+                argylePromptModal.hide();
+            }
+            startArgyleFlow();
+        });
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const postApplyFlow = urlParams.get('post_apply');
+    const workflowState = document.getElementById('workflowState');
+    const argyleAlreadyConnected = workflowState && workflowState.dataset.argyleConnected === '1';
+    if (postApplyFlow === '1' && !argyleAlreadyConnected) {
+        if (argylePromptModal) {
+            setTimeout(() => argylePromptModal.show(), 450);
+        }
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+
+    // Check for pending Plaid report generation
+    checkForPendingPlaidReport();
+    // Initialize Gauge
+    {% if data.credit_score and data.credit_score != 'N/A' %}
+    const score = Number({{ data.credit_score if data.credit_score else 650 }});
+    const maxScore = 850;
+    const minScore = 0;
+    const clampedScore = Math.max(minScore, Math.min(maxScore, score));
+    const config = {
+        angle: 0,
+        lineWidth: 0.22,
+        radiusScale: 1,
+        pointer: {
+            length: 0.54,
+            strokeWidth: 0.03,
+            color: '#1F2A44'
+        },
+        limitMax: false,
+        limitMin: false,
+        strokeColor: '#E0E0E0',
+        generateGradient: true,
+        highDpiSupport: true,
+        staticZones: [
+            {strokeStyle: "#E74C3C", min: 0, max: 579},    // Poor - Red
+            {strokeStyle: "#F39C12", min: 580, max: 669}, // Fair - Orange
+            {strokeStyle: "#F1C40F", min: 670, max: 739}, // Good - Yellow
+            {strokeStyle: "#3498DB", min: 740, max: 799}, // Very Good - Blue
+            {strokeStyle: "#27AE60", min: 800, max: 850}  // Excellent - Green
+        ]
+    };
+
+    const progressArc = document.getElementById('mainGaugeProgress');
+    const arcPath = document.getElementById('mainGaugeArcPath');
+    const arcPointer = document.getElementById('mainGaugePointer');
+    const gradeTarget = document.getElementById('gradeGauge');
+    const gaugeScoreElement = document.getElementById('gaugeScore');
+    const zoneChips = document.querySelectorAll('.score-zone-chip');
+    const finalGaugeScore = clampedScore;
+
+    const highlightActiveZone = (value) => {
+        zoneChips.forEach((chip) => {
+            const zoneMin = Number(chip.getAttribute('data-zone-min'));
+            const zoneMax = Number(chip.getAttribute('data-zone-max'));
+            if (value >= zoneMin && value <= zoneMax) {
+                chip.classList.add('active');
+            } else {
+                chip.classList.remove('active');
+            }
+        });
+    };
+
+    const renderSemiGauge = (value, arcLength) => {
+        const boundedValue = Math.max(minScore, Math.min(maxScore, value));
+        const ratio = boundedValue / maxScore;
+        const dashOffset = arcLength * (1 - ratio);
+
+        progressArc.style.strokeDashoffset = `${dashOffset}`;
+
+        if (gaugeScoreElement) {
+            gaugeScoreElement.textContent = String(Math.round(boundedValue));
+        }
+        highlightActiveZone(Math.round(boundedValue));
+
+        if (arcPointer) {
+            const cx = 190;
+            const cy = 190;
+            const radius = 150;
+            const angle = Math.PI - (Math.PI * ratio);
+            const x = cx + radius * Math.cos(angle);
+            const y = cy - radius * Math.sin(angle);
+            arcPointer.setAttribute('transform', `translate(${x}, ${y})`);
+        }
+    };
+
+    const animateMainGauge = (targetValue, arcLength, duration = 1700) => {
+        const start = performance.now();
+        const fromValue = minScore;
+
+        const frame = (now) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = fromValue + (targetValue - fromValue) * eased;
+            renderSemiGauge(current, arcLength);
+
+            if (progress < 1) {
+                requestAnimationFrame(frame);
+            } else {
+                renderSemiGauge(targetValue, arcLength);
+            }
+        };
+
+        requestAnimationFrame(frame);
+    };
+
+    if (!Number.isNaN(score) && progressArc && arcPath) {
+        const arcLength = arcPath.getTotalLength();
+        progressArc.style.strokeDasharray = `${arcLength}`;
+        progressArc.style.strokeDashoffset = `${arcLength}`;
+        renderSemiGauge(minScore, arcLength);
+        animateMainGauge(clampedScore, arcLength, 1800);
+
+        zoneChips.forEach((chip) => {
+            chip.addEventListener('mouseenter', function () {
+                const zoneMin = Number(this.getAttribute('data-zone-min'));
+                const zoneMax = Number(this.getAttribute('data-zone-max'));
+                const previewValue = Math.round((zoneMin + zoneMax) / 2);
+                renderSemiGauge(previewValue, arcLength);
+            });
+            chip.addEventListener('mouseleave', function () {
+                renderSemiGauge(finalGaugeScore, arcLength);
+            });
+        });
+    }
+
+    if (!Number.isNaN(score) && typeof Gauge !== 'undefined') {
+        try {
+            if (gradeTarget) {
+                const miniConfig = {
+                    angle: config.angle,
+                    lineWidth: 0.34,
+                    radiusScale: config.radiusScale,
+                    pointer: {
+                        length: 0.53,
+                        strokeWidth: 0.04,
+                        color: '#1F2A44'
+                    },
+                    limitMax: config.limitMax,
+                    limitMin: config.limitMin,
+                    strokeColor: config.strokeColor,
+                    generateGradient: config.generateGradient,
+                    highDpiSupport: config.highDpiSupport,
+                    staticZones: config.staticZones
+                };
+
+                const gradeGauge = new Gauge(gradeTarget).setOptions(miniConfig);
+                gradeGauge.maxValue = maxScore;
+                gradeGauge.setMinValue(minScore);
+                gradeGauge.animationSpeed = 45;
+                gradeGauge.set(minScore);
+                setTimeout(() => gradeGauge.set(clampedScore), 180);
+            }
+        } catch (error) {
+            console.error('Error initializing gauge:', error);
+        }
+    }
+    {% endif %}
+
+    // Initialize Charts
+    {% if data.spending_data and data.spending_data.labels %}
+    const spendingCtx = document.getElementById('spendingChart');
+    if (spendingCtx) {
+        const spendingChart = ChartFactory.createPieChart('spendingChart', {
+            labels: {{ data.spending_data.labels | tojson }},
+            datasets: [{
+                data: {{ data.spending_data.data | tojson }},
+                backgroundColor: {{ data.spending_data.backgroundColor | tojson if data.spending_data.backgroundColor else ChartDefaults.getColorPalette(data.spending_data.labels|length) | tojson }}
+            }]
+        });
+        RealTimeChart.register('spendingChart', spendingChart);
+    }
+    {% endif %}
+
+    {% if data.credit_utilization_data and data.credit_utilization_data.labels %}
+    const utilizationCtx = document.getElementById('utilizationChart');
+    if (utilizationCtx) {
+        const utilizationChart = ChartFactory.createBarChart('utilizationChart', {
+            labels: {{ data.credit_utilization_data.labels | tojson }},
+            datasets: [{
+                label: 'Utilization %',
+                data: {{ data.credit_utilization_data.data | tojson }},
+                backgroundColor: {{ data.credit_utilization_data.backgroundColor | tojson if data.credit_utilization_data.backgroundColor else ChartDefaults.getColorPalette(data.credit_utilization_data.labels|length) | tojson }}
+            }]
+        });
+        RealTimeChart.register('utilizationChart', utilizationChart);
+    }
+    {% endif %}
+
+    // Test Plaid button click - only add listener if not already added
+    const plaidBtn = document.getElementById('plaidConnectBtn');
+    if (plaidBtn && !plaidBtn.hasAttribute('data-listener-added')) {
+        console.log('Plaid button found, adding click listener');
+        plaidBtn.setAttribute('data-listener-added', 'true');
+        plaidBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling
+            console.log('Plaid button clicked via event listener');
+            if (typeof window.startPlaidFlow === 'function') {
+                window.startPlaidFlow();
+            } else {
+                console.error('startPlaidFlow function not found');
+                alert('Plaid function not loaded. Please refresh the page.');
+            }
+        });
+    } else if (plaidBtn) {
+        console.log('Plaid button listener already added');
+    } else {
+        console.warn('Plaid button not found');
+    }
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+function generateReport() {
+    Loading.show('Generating your credit report...');
+    
+    fetch('/api/generate_unified_report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        Loading.hide();
+        if (data.success) {
+            const sourceType = data.source_type || 'available data';
+            Toast.success(`Credit report generated successfully from ${sourceType} data!`);
+            // Redirect to credit reports page after a short delay
+            setTimeout(() => {
+                window.location.href = '/credit_reports';
+            }, 1500);
+        } else {
+            const errorMsg = data.error || 'Failed to generate credit report';
+            Toast.error(errorMsg);
+            
+            // If no data sources available, show helpful message
+            if (errorMsg.includes('No data sources available')) {
+                setTimeout(() => {
+                    const connectSection = document.querySelector('.card.mt-4');
+                    if (connectSection) {
+                        connectSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 500);
+            }
+        }
+    })
+    .catch(error => {
+        Loading.hide();
+        console.error('Error generating report:', error);
+        Toast.error('Error generating report: ' + error.message);
+    });
+}
+
+
+</script>
+{% endblock %}
